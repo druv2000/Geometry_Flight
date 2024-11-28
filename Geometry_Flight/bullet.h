@@ -4,9 +4,10 @@
 class Bullet : public Model 
 {
 public:
+    // 각 축 이동속도
     float xSpeed;
     float ySpeed = 0.0f;
-    float zSpeed;  // z축 이동 속도
+    float zSpeed; 
 
     Bullet(const Model model, float initialSpeed) : Model(model), zSpeed(initialSpeed)
     {

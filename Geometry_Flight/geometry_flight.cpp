@@ -48,7 +48,6 @@ Model coneModel, sphereModel;
 std::vector<Model> models;
 std::vector<Bullet> bullets;
 
-
 glm::mat4 model, view, projection;
 
 std::random_device rd;
@@ -402,13 +401,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         break;
     case ' ':
     {
-        std::cout << "새로운 총알이 발사되었습니다!" << std::endl;
+        // Bullet 객체 생성 및 추가
         Model newBullet = sphereModel;
         newBullet.positionX = models[1].positionX;
         newBullet.positionY = models[1].positionY;
         newBullet.positionZ = models[1].positionZ;
 
-        // Bullet 객체 생성 및 추가
         Bullet Bullet(newBullet, -0.1f);  // 초기 속도 0.1f로 설정
         bullets.push_back(Bullet);
 
