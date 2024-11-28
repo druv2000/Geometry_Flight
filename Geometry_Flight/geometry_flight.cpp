@@ -93,7 +93,7 @@ void main(int argc, char** argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowPosition(0, 0);
     glutInitWindowSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-    glutCreateWindow("TASK_15");
+    glutCreateWindow("Geometry Flight");
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK)
