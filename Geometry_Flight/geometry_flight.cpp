@@ -47,6 +47,7 @@ Model coneModel, sphereModel;
 
 std::vector<Model> models;
 std::vector<Bullet> bullets;
+std::vector<Player> players;
 
 glm::mat4 model, view, projection;
 
@@ -63,6 +64,7 @@ float SCREEN_WIDTH = 800;
 float SCREEN_HEIGHT = 900;
 
 std::vector<int> selectedModels;
+std::vector<int> selectedPlayers;
 
 // --------- func ---------
 
@@ -117,16 +119,20 @@ void main(int argc, char** argv)
 
     // 초기 모델을 cube와 cone로 설정
     models.push_back(cubeModel);
-    models.push_back(coneModel);
+    models.push_back(cubeModel);
+
+    Player player(coneModel);
+    players.push_back(player);
 
     resetModels();
     initShapesBuffer();
     make_shaderProgram();
 
     selectedModels.clear();
+    selectedPlayers.clear();
     selectedModels.push_back(0);
     std::cout << "model[0] selected" << std::endl;
-
+    
     glutDisplayFunc(drawScene);
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Keyboard);
@@ -149,7 +155,7 @@ void resetModels()
     rotateSwitch = ROTATE_NONE;
 
     // models[0] 위치, 회전정도 초기화
-    models[0].positionX = 0.0f;
+    models[0].positionX = 5.0f;
     models[0].positionY = 0.0f;
     models[0].positionZ = -20.0f;
     models[0].rotationX = 90.0f;
@@ -158,9 +164,17 @@ void resetModels()
     // models[1] 위치, 회전정도 초기화
     models[1].positionX = 0.0;
     models[1].positionY = 0.0f;
-    models[1].positionZ = 10.0f;
-    models[1].rotationX = -90.0f;
+    models[1].positionZ = -20.0f;
+    models[1].rotationX = 90.0f;
     models[1].rotationY = 0.0f;
+
+    // players[0] 위치 회전정도 초기화
+    players[0].positionX = 0.0;
+    players[0].positionY = 0.0f;
+    players[0].positionZ = 10.0f;
+    players[0].rotationX = -90.0f;
+    players[0].rotationY = 0.0;
+
 }
 void drawModels() {
     // 모델 그리기
@@ -177,6 +191,28 @@ void drawModels() {
         glDrawElements(GL_TRIANGLES, models[i].face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
         indexOffset += models[i].face_count * 3;
     }
+    indexOffset = 0;
+    
+
+}
+void drawPlayers() {
+    //플레이어
+    for (size_t i = 0; i < players.size(); i++) {
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(players[i].positionX, players[i].positionY, players[i].positionZ));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(players[i].rotationX), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(players[i].rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+        GLuint indexOffset = 0;
+        for (const auto& model : models) {
+            if (&model == &sphereModel) break;
+            indexOffset += model.face_count * 3;
+        }
+        glDrawElements(GL_TRIANGLES, players[i].face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
+    }
+
 }
 void drawBullets()
 {
@@ -191,9 +227,13 @@ void drawBullets()
 
         // sphereModel의 인덱스 오프셋 계산
         GLuint indexOffset = 0;
-        for (const auto& model : models) {
-            if (&model == &sphereModel) break;
+        for (const auto& model : models)// 적의 수만큼
+        {
             indexOffset += model.face_count * 3;
+        }
+        for (const auto& player : players)// 아군의 수만큼
+        {
+            indexOffset += player.face_count * 3;
         }
 
         glDrawElements(GL_TRIANGLES, sphereModel.face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(GLuint)));
@@ -219,7 +259,19 @@ void updateShapeBuffer() {
         }
         vertexOffset += model.vertex_count;
     }
-
+    //플레이어 버퍼 업데이트
+    for (const auto& player : players) {
+        for (size_t i = 0; i < player.vertex_count; i++) {
+            vertices.push_back(glm::vec3(player.vertices[i].x, player.vertices[i].y, player.vertices[i].z));
+            colors.push_back(player.colors[i]);  // 저장된 색상 사용
+        }
+        for (size_t i = 0; i < player.face_count; i++) {
+            indices.push_back(player.faces[i].v1 - 1 + vertexOffset);
+            indices.push_back(player.faces[i].v2 - 1 + vertexOffset);
+            indices.push_back(player.faces[i].v3 - 1 + vertexOffset);
+        }
+        vertexOffset += player.vertex_count;
+    }
     // 총알 버퍼 업데이트
     for (const auto& bullet : bullets) {
         for (size_t i = 0; i < bullet.vertex_count; i++) {
@@ -361,6 +413,7 @@ GLvoid drawScene()
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
     drawModels();
+    drawPlayers();
     drawBullets();
     glutSwapBuffers();
 }
@@ -373,19 +426,29 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     switch (key) {
     case '1':
         selectedModels.clear();
+        selectedPlayers.clear();
         selectedModels.push_back(0);
         std::cout << "model[0] selected" << std::endl;
         break;
     case '2':
         selectedModels.clear();
+        selectedPlayers.clear();
         selectedModels.push_back(1);
         std::cout << "model[1] selected" << std::endl;
+
         break;
     case '3':
         selectedModels.clear();
+        selectedPlayers.clear();
         selectedModels.push_back(0);
         selectedModels.push_back(1);
         std::cout << "model[0], model[1] selected" << std::endl;
+        break;
+    case '4':
+        selectedModels.clear();
+        selectedPlayers.clear();
+        selectedPlayers.push_back(0);
+        std::cout << "player[0] selected" << std::endl;
         break;
     case 'x':
         rotateSwitch = ROTATE_X_PLUS;
@@ -406,6 +469,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         newBullet.positionX = models[1].positionX;
         newBullet.positionY = models[1].positionY;
         newBullet.positionZ = models[1].positionZ;
+
+        newBullet.positionX = players[0].positionX;
+        newBullet.positionY = players[0].positionY;
+        newBullet.positionZ = players[0].positionZ;
+
 
         Bullet Bullet(newBullet, -0.1f);  // 초기 속도 0.1f로 설정
         bullets.push_back(Bullet);
@@ -477,8 +545,38 @@ GLvoid Update()
         // 각도가 360도를 넘어가면 0으로 리셋
         currentModel->rotationX = fmod(currentModel->rotationX, 360.0f);
         currentModel->rotationY = fmod(currentModel->rotationY, 360.0f);
-    }
 
+    }
+    // 플레이어 업데이트
+    for (int modelIdx : selectedPlayers) // 선택된 경우에 한해서 실행
+    {
+        // 회전 처리
+        Model* currentModel = &players[modelIdx];
+        switch (rotateSwitch) {
+        case ROTATE_X_PLUS:
+            currentModel->rotationX += 5.0f;
+            break;
+        case ROTATE_X_MINUS:
+            currentModel->rotationX -= 5.0f;
+            break;
+        case ROTATE_Y_PLUS:
+            currentModel->rotationY += 5.0f;
+            break;
+        case ROTATE_Y_MINUS:
+            currentModel->rotationY -= 5.0f;
+            break;
+        }
+
+        // 이동 처리
+        currentModel->positionX += moveX;
+        currentModel->positionY += moveY;
+
+        // 각도가 360도를 넘어가면 0으로 리셋
+        currentModel->rotationX = fmod(currentModel->rotationX, 360.0f);
+        currentModel->rotationY = fmod(currentModel->rotationY, 360.0f);
+
+    }
+    
     // 총알 업데이트
     for (auto& bullet : bullets) {
         bullet.update();
