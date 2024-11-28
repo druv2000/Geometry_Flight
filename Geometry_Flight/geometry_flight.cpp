@@ -64,7 +64,6 @@ float SCREEN_WIDTH = 800;
 float SCREEN_HEIGHT = 900;
 
 std::vector<int> selectedModels;
-std::vector<int> selectedPlayers;
 
 // --------- func ---------
 
@@ -129,7 +128,6 @@ void main(int argc, char** argv)
     make_shaderProgram();
 
     selectedModels.clear();
-    selectedPlayers.clear();
     selectedModels.push_back(0);
     std::cout << "model[0] selected" << std::endl;
     
@@ -426,29 +424,24 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     switch (key) {
     case '1':
         selectedModels.clear();
-        selectedPlayers.clear();
         selectedModels.push_back(0);
-        std::cout << "model[0] selected" << std::endl;
+        std::cout << "enemy[0] selected" << std::endl;
         break;
     case '2':
         selectedModels.clear();
-        selectedPlayers.clear();
         selectedModels.push_back(1);
-        std::cout << "model[1] selected" << std::endl;
+        std::cout << "enemy[1] selected" << std::endl;
 
         break;
     case '3':
         selectedModels.clear();
-        selectedPlayers.clear();
         selectedModels.push_back(0);
         selectedModels.push_back(1);
-        std::cout << "model[0], model[1] selected" << std::endl;
+        std::cout << "enemy[0], enemy[1] selected" << std::endl;
         break;
     case '4':
         selectedModels.clear();
-        selectedPlayers.clear();
-        selectedPlayers.push_back(0);
-        std::cout << "player[0] selected" << std::endl;
+        std::cout << "enemy  Unselected" << std::endl;
         break;
     case 'x':
         rotateSwitch = ROTATE_X_PLUS;
@@ -488,6 +481,10 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     default:
         break;
     }
+    for (size_t i = 0; i < players.size(); i++)
+    {
+        players[i].hadle_event(NULL, false, rotateSwitch);//누름
+    }
     glutPostRedisplay();
 }
 GLvoid SpecialKeyboard(int key, int x, int y)
@@ -500,6 +497,11 @@ GLvoid SpecialKeyboard(int key, int x, int y)
         moveX = 0.01f;
         break;
     }
+    for (size_t i = 0; i < players.size(); i++)
+    {
+        players[i].hadle_event(key, true, rotateSwitch);//누름
+    }
+    
     glutPostRedisplay();
 }
 GLvoid SpecialKeyboardUp(int key, int x, int y)
@@ -509,6 +511,10 @@ GLvoid SpecialKeyboardUp(int key, int x, int y)
     case GLUT_KEY_RIGHT:
         moveX = 0.0f;
         break;
+    }
+    for (size_t i = 0; i < players.size(); i++)
+    {
+        players[i].hadle_event(key, false, rotateSwitch);//뗌
     }
     glutPostRedisplay();
 }
@@ -547,34 +553,12 @@ GLvoid Update()
         currentModel->rotationY = fmod(currentModel->rotationY, 360.0f);
 
     }
+
     // 플레이어 업데이트
-    for (int modelIdx : selectedPlayers) // 선택된 경우에 한해서 실행
+    for (auto& player: players) // 선택된 경우에 한해서 실행
     {
-        // 회전 처리
-        Model* currentModel = &players[modelIdx];
-        switch (rotateSwitch) {
-        case ROTATE_X_PLUS:
-            currentModel->rotationX += 5.0f;
-            break;
-        case ROTATE_X_MINUS:
-            currentModel->rotationX -= 5.0f;
-            break;
-        case ROTATE_Y_PLUS:
-            currentModel->rotationY += 5.0f;
-            break;
-        case ROTATE_Y_MINUS:
-            currentModel->rotationY -= 5.0f;
-            break;
-        }
-
-        // 이동 처리
-        currentModel->positionX += moveX;
-        currentModel->positionY += moveY;
-
-        // 각도가 360도를 넘어가면 0으로 리셋
-        currentModel->rotationX = fmod(currentModel->rotationX, 360.0f);
-        currentModel->rotationY = fmod(currentModel->rotationY, 360.0f);
-
+        player.hadle_event(0,false,rotateSwitch);
+        player.update();
     }
     
     // 총알 업데이트
