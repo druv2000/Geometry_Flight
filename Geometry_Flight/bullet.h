@@ -1,35 +1,45 @@
 #pragma once
 #include "obj_reader.h"
+#include <random>
 
-class Bullet : public Model 
+class Bullet : public Model
 {
 public:
-    // 각 축 이동속도
     float xSpeed;
-    float ySpeed = 0.0f;
-    float zSpeed; 
+    float ySpeed;
+    float zSpeed;
+    bool is_active;
 
-    Bullet(const Model model, float initialSpeed) : Model(model), zSpeed(initialSpeed)
+    Bullet() : Model(), xSpeed(0.0f), ySpeed(0.0f), zSpeed(0.0f), is_active(false) {}
+
+    void initialize(const Model& model, float initialSpeed)
     {
-        // 색상 초기화
+        *static_cast<Model*>(this) = model;
+        zSpeed = initialSpeed;
+        is_active = true;
+
         colors.resize(vertex_count);
         for (size_t i = 0; i < vertex_count; i++) {
-            colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);  // 흰색으로 초기화
+            colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
         }
 
-        // x방향 랜덤 설정 (탄 퍼짐 현상)
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<float> dis(-0.005f, 0.005f);
         xSpeed = dis(gen);
+        ySpeed = 0.0f;
     }
 
-    void update() 
+    void update()
     {
-        // 매 프레임마다 이동
+        if (!is_active) return;
         positionX += xSpeed;
-        positionX += ySpeed;
+        positionY += ySpeed;
         positionZ += zSpeed;
     }
-};
 
+    void deactivate()
+    {
+        is_active = false;
+    }
+};

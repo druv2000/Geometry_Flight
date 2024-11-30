@@ -17,6 +17,7 @@
 #include <cmath>
 
 #include "bullet.h"
+#include "bullet_pool.h"
 
 #define CUBE 0
 #define CYLINDER 1
@@ -63,6 +64,13 @@ float SCREEN_WIDTH = 800;
 float SCREEN_HEIGHT = 900;
 
 std::vector<int> selectedModels;
+
+std::chrono::steady_clock::time_point last_update_time;
+float frame_time = 0.0f;
+float frame_rate = 0.0f;
+
+BulletPool bulletPool(100); // 100개의 총알을 가진 풀 생성
+
 
 // --------- func ---------
 
@@ -119,6 +127,7 @@ void main(int argc, char** argv)
     models.push_back(cubeModel);
     models.push_back(coneModel);
 
+
     resetModels();
     initShapesBuffer();
     make_shaderProgram();
@@ -126,6 +135,8 @@ void main(int argc, char** argv)
     selectedModels.clear();
     selectedModels.push_back(0);
     std::cout << "model[0] selected" << std::endl;
+
+    last_update_time = std::chrono::steady_clock::now();
 
     glutDisplayFunc(drawScene);
     glutReshapeFunc(Reshape);
@@ -178,25 +189,28 @@ void drawModels() {
         indexOffset += models[i].face_count * 3;
     }
 }
-void drawBullets()
-{
-    // 총알 그리기
-    for (const auto& bullet : bullets) {
-        glm::mat4 bulletModel = glm::mat4(1.0f);
-        bulletModel = glm::translate(bulletModel, glm::vec3(bullet.positionX, bullet.positionY, bullet.positionZ));
-        bulletModel = glm::scale(bulletModel, glm::vec3(0.2f, 0.2f, 0.2f));  // 크기 조절
+void drawBullets() {
+    for (const auto& bullet : bulletPool.getAllBullets()) {
+        if (bullet.is_active) {
+            glm::mat4 bulletModel = glm::mat4(1.0f);
+            bulletModel = glm::translate(bulletModel, glm::vec3(bullet.positionX, bullet.positionY, bullet.positionZ));
+            bulletModel = glm::scale(bulletModel, glm::vec3(0.2f, 0.2f, 0.2f)); // 크기 조절
 
-        GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(bulletModel));
+            GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(bulletModel));
 
-        // sphereModel의 인덱스 오프셋 계산
-        GLuint indexOffset = 0;
-        for (const auto& model : models) {
-            if (&model == &sphereModel) break;
-            indexOffset += model.face_count * 3;
+            // 총알의 인덱스 오프셋 계산
+            GLuint indexOffset = 0;
+            for (const auto& model : models) {
+                indexOffset += model.face_count * 3;
+            }
+            for (const auto& b : bulletPool.getAllBullets()) {
+                if (&b == &bullet) break;
+                if (b.is_active) indexOffset += b.face_count * 3;
+            }
+
+            glDrawElements(GL_TRIANGLES, bullet.face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(GLuint)));
         }
-
-        glDrawElements(GL_TRIANGLES, sphereModel.face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(GLuint)));
     }
 }
 
@@ -220,18 +234,20 @@ void updateShapeBuffer() {
         vertexOffset += model.vertex_count;
     }
 
-    // 총알 버퍼 업데이트
-    for (const auto& bullet : bullets) {
-        for (size_t i = 0; i < bullet.vertex_count; i++) {
-            vertices.push_back(glm::vec3(bullet.vertices[i].x, bullet.vertices[i].y, bullet.vertices[i].z));
-            colors.push_back(bullet.colors[i]);  // 총알의 저장된 색상 사용
+    // bullet(pool) 버퍼 업데이트
+    for (const auto& bullet : bulletPool.getAllBullets()) {
+        if (bullet.is_active) {
+            for (size_t i = 0; i < bullet.vertex_count; i++) {
+                vertices.push_back(glm::vec3(bullet.vertices[i].x, bullet.vertices[i].y, bullet.vertices[i].z));
+                colors.push_back(bullet.colors[i]);
+            }
+            for (size_t i = 0; i < bullet.face_count; i++) {
+                indices.push_back(bullet.faces[i].v1 - 1 + vertexOffset);
+                indices.push_back(bullet.faces[i].v2 - 1 + vertexOffset);
+                indices.push_back(bullet.faces[i].v3 - 1 + vertexOffset);
+            }
+            vertexOffset += bullet.vertex_count;
         }
-        for (size_t i = 0; i < bullet.face_count; i++) {
-            indices.push_back(bullet.faces[i].v1 - 1 + vertexOffset);
-            indices.push_back(bullet.faces[i].v2 - 1 + vertexOffset);
-            indices.push_back(bullet.faces[i].v3 - 1 + vertexOffset);
-        }
-        vertexOffset += bullet.vertex_count;
     }
 
     // 버퍼 데이터 업데이트
@@ -402,13 +418,15 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     case ' ':
     {
         // Bullet 객체 생성 및 추가
-        Model newBullet = sphereModel;
-        newBullet.positionX = models[1].positionX;
-        newBullet.positionY = models[1].positionY;
-        newBullet.positionZ = models[1].positionZ;
-
-        Bullet Bullet(newBullet, -0.1f);  // 초기 속도 0.1f로 설정
-        bullets.push_back(Bullet);
+        Model bulletModel = sphereModel;
+        Bullet* newBullet = bulletPool.getBullet(bulletModel, -0.1f);
+        if (newBullet != nullptr)
+        {
+            // 총알 초기 위치 설정 등 추가 로직
+            newBullet->positionX = models[1].positionX;
+            newBullet->positionY = models[1].positionY;
+            newBullet->positionZ = models[1].positionZ;
+        }
 
         updateShapeBuffer();
     }
@@ -451,6 +469,11 @@ GLvoid Timer(int value)
 }
 GLvoid Update()
 {
+    auto current_time = std::chrono::steady_clock::now();
+    std::chrono::duration<float> elapsed = current_time - last_update_time;
+    frame_time = elapsed.count();
+    frame_rate = 1.0f / frame_time;
+    
     for (int modelIdx : selectedModels) // 선택된 도형들에 한해서 실행
     {
         // 회전 처리
@@ -480,16 +503,11 @@ GLvoid Update()
     }
 
     // 총알 업데이트
-    for (auto& bullet : bullets) {
-        bullet.update();
-    }
+    bulletPool.updateBullets();
 
-    // 화면 밖으로 나간 총알 제거
-    bullets.erase(
-        std::remove_if(bullets.begin(), bullets.end(),
-            [](const Bullet& b) { return b.positionZ > 100.0f; }),
-        bullets.end()
-    );
+    // 프레임 시간과 프레임 레이트 출력
+    std::cout << "Frame Time: " << frame_time * 1000.0f << " ms, Frame Rate: " << frame_rate << " FPS\n";
+    last_update_time = current_time;
 
     updateShapeBuffer();
     glutPostRedisplay();

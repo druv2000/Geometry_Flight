@@ -135,7 +135,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bullet.h" />
+    <ClInclude Include="bullet_pool.h" />
     <ClInclude Include="obj_reader.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
