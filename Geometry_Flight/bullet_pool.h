@@ -1,8 +1,7 @@
 #pragma once
 #include "bullet.h"
 
-class BulletPool
-{
+class BulletPool {
 private:
     std::vector<Bullet> bullets;
     size_t poolSize;
@@ -19,28 +18,26 @@ public:
         {
             if (!bullet.is_active)
             {
-                bullet.initialize(model, initialSpeed);
+                bullet.init(model, initialSpeed);
                 return &bullet;
             }
         }
         return nullptr; // 사용 가능한 총알이 없을 경우
     }
-
-    void updateBullets()
+    void update(float delta_time)
     {
         for (auto& bullet : bullets)
         {
             if (bullet.is_active)
             {
-                bullet.update();
-                if (bullet.positionZ <= -100.0f)
+                bullet.update(delta_time);
+                if (bullet.position_z <= -500.0f)
                 {
                     bullet.deactivate();
                 }
             }
         }
     }
-
     std::vector<Bullet>& getAllBullets()
     {
         return bullets;

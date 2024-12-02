@@ -9,40 +9,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <vector>
-
+#include "model.h"
 
 #define MAX_LINE_LENGTH 1000
-
-typedef struct {
-    float x, y, z;
-} Vertex;
-
-typedef struct {
-    unsigned int v1, v2, v3;
-} Face;
-
-typedef struct {
-    Vertex* vertices;
-    size_t vertex_count;
-    Face* faces;
-    size_t face_count;
-
-    int modelType;
-
-    std::vector<glm::vec3> colors;  // 각 정점의 색상을 저장
-
-    float rotationX;
-    float rotationY;
-    float rotationZ;
-
-    float positionX;
-    float positionY;
-    float positionZ;
-
-    float faceRotationX;  // 면의 X축 회전
-    float faceRotationY;  // 면의 Y축 회전
-    float faceRotationZ;  // 면의 Z축 회전
-} Model;
 
 void read_newline(char* str) {
     char* pos;

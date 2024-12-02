@@ -134,8 +134,10 @@
     <ClCompile Include="geometry_flight.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="background.h" />
     <ClInclude Include="bullet.h" />
     <ClInclude Include="bullet_pool.h" />
+    <ClInclude Include="model.h" />
     <ClInclude Include="obj_reader.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="utility.h" />

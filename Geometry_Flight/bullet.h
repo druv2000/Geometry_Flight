@@ -5,17 +5,17 @@
 class Bullet : public Model
 {
 public:
-    float xSpeed;
-    float ySpeed;
-    float zSpeed;
+    float x_speed;
+    float y_speed;
+    float z_speed;
     bool is_active;
 
-    Bullet() : Model(), xSpeed(0.0f), ySpeed(0.0f), zSpeed(0.0f), is_active(false) {}
+    Bullet() : Model(), x_speed(0.0f), y_speed(0.0f), z_speed(0.0f), is_active(false) {}
 
-    void initialize(const Model& model, float initialSpeed)
+    void init(const Model& model, float initialSpeed)
     {
         *static_cast<Model*>(this) = model;
-        zSpeed = initialSpeed;
+        z_speed = initialSpeed;
         is_active = true;
 
         colors.resize(vertex_count);
@@ -26,18 +26,20 @@ public:
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<float> dis(-0.005f, 0.005f);
-        xSpeed = dis(gen);
-        ySpeed = 0.0f;
+        x_speed = dis(gen);
+        y_speed = 0.0f;
     }
-
-    void update()
+    void update(float delta_time)
     {
         if (!is_active) return;
-        positionX += xSpeed;
-        positionY += ySpeed;
-        positionZ += zSpeed;
+        position_x += x_speed * delta_time * 1000.0f; // 1000fps 기준으로 정규화
+        position_y += y_speed * delta_time * 1000.0f;
+        position_z += z_speed * delta_time * 1000.0f;
     }
+    void handle_events(float frame_time)
+    {
 
+    }
     void deactivate()
     {
         is_active = false;

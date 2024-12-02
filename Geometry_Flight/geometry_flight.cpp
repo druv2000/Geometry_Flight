@@ -1,23 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _USE_MATH_DEFINES
 
-#include <iostream>
-#include <gl/glew.h>
-#include <gl/freeglut.h>
-#include <gl/freeglut_ext.h>
-
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "utility.h"
-#include <random>
-#include <chrono>
-#include <thread>
-#include <cmath>
-
 #include "bullet.h"
 #include "bullet_pool.h"
+#include "player.h"
+#include "background.h"
 
 #define CUBE 0
 #define CYLINDER 1
@@ -30,13 +17,6 @@
 #define ROTATE_Y_PLUS 3
 #define ROTATE_Y_MINUS 4
 
-#define ORBIT_NONE 0
-#define ORBIT_PLUS 1
-#define ORBIT_MINUS 2
-
-#define DISTANCE_BY_CENTER 3.0f;
-
-
 GLuint vertexShader;
 GLuint fragmentShader;
 GLuint shaderProgramID;
@@ -46,8 +26,11 @@ GLuint ebo; // Element Buffer Object 추가
 Model cubeModel, cylinderModel;
 Model coneModel, sphereModel;
 
-std::vector<Model> models;
+Player player;
+Background background;
+std::vector<Model> objects;
 std::vector<Bullet> bullets;
+
 
 glm::mat4 model, view, projection;
 
@@ -57,8 +40,6 @@ std::uniform_real_distribution<> dis(0.0, 1.0);
 
 bool drawModeSwitch = false;
 int rotateSwitch = ROTATE_NONE;
-float moveX = 0.0f;
-float moveY = 0.0f;
 
 float SCREEN_WIDTH = 800;
 float SCREEN_HEIGHT = 900;
@@ -69,14 +50,13 @@ std::chrono::steady_clock::time_point last_update_time;
 float frame_time = 0.0f;
 float frame_rate = 0.0f;
 
-BulletPool bulletPool(100); // 100개의 총알을 가진 풀 생성
+BulletPool bulletPool(1000); // 100개의 총알을 가진 풀 생성
 
 
 // --------- func ---------
 
 void initializeModelColors(Model& model);
-void resetModels();
-void drawModels();
+void draw_objects();
 
 void updateShapeBuffer();
 void initShapesBuffer();
@@ -123,13 +103,19 @@ void main(int argc, char** argv)
     initializeModelColors(coneModel);
     initializeModelColors(sphereModel);
 
-    // 초기 모델을 cube와 cone로 설정
-    models.push_back(cubeModel);
-    models.push_back(coneModel);
+    objects.clear();  // 기존 모델 제거
+
+    
+    // 배경 설정
+    background.init(cylinderModel, cubeModel);
+
+    // 초기 모델 설정 (player)
+    player.init(coneModel);
+    objects.push_back(static_cast<Model>(player));
 
 
-    resetModels();
     initShapesBuffer();
+    updateShapeBuffer();
     make_shaderProgram();
 
     selectedModels.clear();
@@ -147,64 +133,72 @@ void main(int argc, char** argv)
     glutMainLoop();
 }
 
-void initializeModelColors(Model& model) {
+void initializeModelColors(Model& model)
+{
     model.colors.resize(model.vertex_count);
-    for (size_t i = 0; i < model.vertex_count; i++) {
+    for (size_t i = 0; i < model.vertex_count; i++) 
+    {
         model.colors[i] = glm::vec3(dis(gen), dis(gen), dis(gen));
         //model.colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
     }
 }
-void resetModels()
+void draw_objects()
 {
-    // 회전 종료
-    rotateSwitch = ROTATE_NONE;
+    // 배경의 인덱스 오프셋 계산
+    unsigned int backgroundOffset = background.face_count * 3 + background.cube_models.size() * background.cube_models[0].face_count * 3;
 
-    // models[0] 위치, 회전정도 초기화
-    models[0].positionX = 0.0f;
-    models[0].positionY = 0.0f;
-    models[0].positionZ = -20.0f;
-    models[0].rotationX = 90.0f;
-    models[0].rotationY = 0.0f;
-
-    // models[1] 위치, 회전정도 초기화
-    models[1].positionX = 0.0;
-    models[1].positionY = 0.0f;
-    models[1].positionZ = 10.0f;
-    models[1].rotationX = -90.0f;
-    models[1].rotationY = 0.0f;
-}
-void drawModels() {
     // 모델 그리기
-    unsigned int indexOffset = 0;
-    for (size_t i = 0; i < models.size(); i++) {
+    unsigned int indexOffset = backgroundOffset;
+    for (size_t i = 0; i < objects.size(); i++)
+    {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(models[i].positionX, models[i].positionY, models[i].positionZ));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(models[i].rotationX), glm::vec3(1.0f, 0.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(models[i].rotationY), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(objects[i].position_x, objects[i].position_y, objects[i].position_z));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i].rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i].rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i].rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        if (i == 0) // 플레이어 캐릭터라면
+        {
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
+        }
 
         GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        glDrawElements(GL_TRIANGLES, models[i].face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
-        indexOffset += models[i].face_count * 3;
+        glDrawElements(GL_TRIANGLES, objects[i].face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
+        indexOffset += objects[i].face_count * 3;
     }
 }
-void drawBullets() {
-    for (const auto& bullet : bulletPool.getAllBullets()) {
-        if (bullet.is_active) {
+void draw_bullets() 
+{
+    // 배경의 인덱스 오프셋 계산
+    unsigned int backgroundOffset = background.face_count * 3 + background.cube_models.size() * background.cube_models[0].face_count * 3;
+
+    // 다른 오브젝트들의 인덱스 오프셋 계산
+    unsigned int objectsOffset = backgroundOffset;
+    for (const auto& model : objects) 
+    {
+        if (&model != &background)
+        {
+            objectsOffset += model.face_count * 3;
+        }
+    }
+
+    for (const auto& bullet : bulletPool.getAllBullets()) 
+    {
+        if (bullet.is_active)
+        {
             glm::mat4 bulletModel = glm::mat4(1.0f);
-            bulletModel = glm::translate(bulletModel, glm::vec3(bullet.positionX, bullet.positionY, bullet.positionZ));
+            bulletModel = glm::translate(bulletModel, glm::vec3(bullet.position_x, bullet.position_y, bullet.position_z));
             bulletModel = glm::scale(bulletModel, glm::vec3(0.2f, 0.2f, 0.2f)); // 크기 조절
 
             GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(bulletModel));
 
             // 총알의 인덱스 오프셋 계산
-            GLuint indexOffset = 0;
-            for (const auto& model : models) {
-                indexOffset += model.face_count * 3;
-            }
-            for (const auto& b : bulletPool.getAllBullets()) {
+            GLuint indexOffset = objectsOffset;
+            for (const auto& b : bulletPool.getAllBullets()) 
+            {
                 if (&b == &bullet) break;
                 if (b.is_active) indexOffset += b.face_count * 3;
             }
@@ -213,35 +207,100 @@ void drawBullets() {
         }
     }
 }
+void draw_background()
+{
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    modelMatrix = glm::translate(modelMatrix, glm::vec3(background.position_x, background.position_y, background.position_z));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(background.rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(background.rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
+    modelMatrix = glm::rotate(modelMatrix, glm::radians(background.rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(20.0f, 30.0f, 20.0f));
 
-void updateShapeBuffer() {
+    // 배경 실린더 그리기
+    GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+    glDrawElements(GL_TRIANGLES, background.face_count * 3, GL_UNSIGNED_INT, 0);
+
+    // 작은 정육면체들 그리기
+    for (const auto& cube : background.cube_models)
+    {
+        glm::mat4 cubeMatrix = modelMatrix;
+        cubeMatrix = glm::translate(cubeMatrix, glm::vec3(cube.position_x, cube.position_y, cube.position_z));
+        cubeMatrix = glm::rotate(cubeMatrix, glm::radians(cube.rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
+        cubeMatrix = glm::rotate(cubeMatrix, glm::radians(cube.rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
+        cubeMatrix = glm::rotate(cubeMatrix, glm::radians(cube.rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
+        cubeMatrix = glm::scale(cubeMatrix, glm::vec3(0.1f, 0.1f, 0.5f));
+
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(cubeMatrix));
+        glDrawElements(GL_TRIANGLES, cube.face_count * 3, GL_UNSIGNED_INT, (void*)(background.face_count * 3 * sizeof(unsigned int)));
+    }
+}
+void updateShapeBuffer() 
+{
     std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
     std::vector<glm::vec3> colors;
 
-    // 모델 버퍼 업데이트
     unsigned int vertexOffset = 0;
-    for (const auto& model : models) {
-        for (size_t i = 0; i < model.vertex_count; i++) {
-            vertices.push_back(glm::vec3(model.vertices[i].x, model.vertices[i].y, model.vertices[i].z));
-            colors.push_back(model.colors[i]);  // 저장된 색상 사용
+
+    // 배경 실린더 버퍼 업데이트
+    const Model& backgroundCylinder = static_cast<Model>(background);
+    for (size_t i = 0; i < backgroundCylinder.vertex_count; i++) 
+    {
+        vertices.push_back(glm::vec3(backgroundCylinder.vertices[i].x, backgroundCylinder.vertices[i].y, backgroundCylinder.vertices[i].z));
+        colors.push_back(backgroundCylinder.colors[i]);
+    }
+    for (size_t i = 0; i < backgroundCylinder.face_count; i++) 
+    {
+        indices.push_back(backgroundCylinder.faces[i].v1 - 1 + vertexOffset);
+        indices.push_back(backgroundCylinder.faces[i].v2 - 1 + vertexOffset);
+        indices.push_back(backgroundCylinder.faces[i].v3 - 1 + vertexOffset);
+    }
+    vertexOffset += backgroundCylinder.vertex_count;
+
+    // 작은 정육면체들 버퍼 업데이트
+    for (const auto& cube : background.cube_models) 
+    {
+        for (size_t i = 0; i < cube.vertex_count; i++) 
+        {
+            vertices.push_back(glm::vec3(cube.vertices[i].x, cube.vertices[i].y, cube.vertices[i].z));
+            colors.push_back(cube.colors[i]);
         }
-        for (size_t i = 0; i < model.face_count; i++) {
-            indices.push_back(model.faces[i].v1 - 1 + vertexOffset);
-            indices.push_back(model.faces[i].v2 - 1 + vertexOffset);
-            indices.push_back(model.faces[i].v3 - 1 + vertexOffset);
+        for (size_t i = 0; i < cube.face_count; i++) 
+        {
+            indices.push_back(cube.faces[i].v1 - 1 + vertexOffset);
+            indices.push_back(cube.faces[i].v2 - 1 + vertexOffset);
+            indices.push_back(cube.faces[i].v3 - 1 + vertexOffset);
         }
-        vertexOffset += model.vertex_count;
+        vertexOffset += cube.vertex_count;
     }
 
-    // bullet(pool) 버퍼 업데이트
-    for (const auto& bullet : bulletPool.getAllBullets()) {
+    // 플레이어 버퍼 업데이트
+    const Model& playerModel = static_cast<Model>(player);
+    for (size_t i = 0; i < playerModel.vertex_count; i++)
+    {
+        vertices.push_back(glm::vec3(playerModel.vertices[i].x, playerModel.vertices[i].y, playerModel.vertices[i].z));
+        colors.push_back(playerModel.colors[i]);
+    }
+    for (size_t i = 0; i < playerModel.face_count; i++)
+    {
+        indices.push_back(playerModel.faces[i].v1 - 1 + vertexOffset);
+        indices.push_back(playerModel.faces[i].v2 - 1 + vertexOffset);
+        indices.push_back(playerModel.faces[i].v3 - 1 + vertexOffset);
+    }
+    vertexOffset += playerModel.vertex_count;
+
+    // 총알 버퍼 업데이트
+    for (const auto& bullet : bulletPool.getAllBullets()) 
+    {
         if (bullet.is_active) {
-            for (size_t i = 0; i < bullet.vertex_count; i++) {
+            for (size_t i = 0; i < bullet.vertex_count; i++) 
+            {
                 vertices.push_back(glm::vec3(bullet.vertices[i].x, bullet.vertices[i].y, bullet.vertices[i].z));
                 colors.push_back(bullet.colors[i]);
             }
-            for (size_t i = 0; i < bullet.face_count; i++) {
+            for (size_t i = 0; i < bullet.face_count; i++) 
+            {
                 indices.push_back(bullet.faces[i].v1 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v2 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v3 - 1 + vertexOffset);
@@ -376,8 +435,9 @@ GLvoid drawScene()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    drawModels();
-    drawBullets();
+    draw_background();
+    draw_objects();
+    draw_bullets();
     glutSwapBuffers();
 }
 GLvoid Reshape(int w, int h)
@@ -387,34 +447,6 @@ GLvoid Reshape(int w, int h)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
-    case '1':
-        selectedModels.clear();
-        selectedModels.push_back(0);
-        std::cout << "model[0] selected" << std::endl;
-        break;
-    case '2':
-        selectedModels.clear();
-        selectedModels.push_back(1);
-        std::cout << "model[1] selected" << std::endl;
-        break;
-    case '3':
-        selectedModels.clear();
-        selectedModels.push_back(0);
-        selectedModels.push_back(1);
-        std::cout << "model[0], model[1] selected" << std::endl;
-        break;
-    case 'x':
-        rotateSwitch = ROTATE_X_PLUS;
-        break;
-    case 'X':
-        rotateSwitch = ROTATE_X_MINUS;
-        break;
-    case 'y':
-        rotateSwitch = ROTATE_Y_PLUS;
-        break;
-    case 'Y':
-        rotateSwitch = ROTATE_Y_MINUS;
-        break;
     case ' ':
     {
         // Bullet 객체 생성 및 추가
@@ -423,14 +455,13 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         if (newBullet != nullptr)
         {
             // 총알 초기 위치 설정 등 추가 로직
-            newBullet->positionX = models[1].positionX;
-            newBullet->positionY = models[1].positionY;
-            newBullet->positionZ = models[1].positionZ;
+            newBullet->position_x = player.position_x;
+            newBullet->position_y = player.position_y;
+            newBullet->position_z = player.position_z;
         }
 
         updateShapeBuffer();
     }
-    break;
     break;
     case 'q':
         exit(0);
@@ -442,24 +473,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 }
 GLvoid SpecialKeyboard(int key, int x, int y)
 {
-    switch (key) {
-    case GLUT_KEY_LEFT:
-        moveX = -0.01f;
-        break;
-    case GLUT_KEY_RIGHT:
-        moveX = 0.01f;
-        break;
-    }
+    player.handle_event(SPECIAL_KEYBOARD_KEYDOWN, '0', key, x, y);
     glutPostRedisplay();
 }
 GLvoid SpecialKeyboardUp(int key, int x, int y)
 {
-    switch (key) {
-    case GLUT_KEY_LEFT:
-    case GLUT_KEY_RIGHT:
-        moveX = 0.0f;
-        break;
-    }
+    player.handle_event(SPECIAL_KEYBOARD_KEYUP, '0', key, x, y);
     glutPostRedisplay();
 }
 GLvoid Timer(int value)
@@ -474,36 +493,16 @@ GLvoid Update()
     frame_time = elapsed.count();
     frame_rate = 1.0f / frame_time;
     
-    for (int modelIdx : selectedModels) // 선택된 도형들에 한해서 실행
-    {
-        // 회전 처리
-        Model* currentModel = &models[modelIdx];
-        switch (rotateSwitch) {
-        case ROTATE_X_PLUS:
-            currentModel->rotationX += 5.0f;
-            break;
-        case ROTATE_X_MINUS:
-            currentModel->rotationX -= 5.0f;
-            break;
-        case ROTATE_Y_PLUS:
-            currentModel->rotationY += 5.0f;
-            break;
-        case ROTATE_Y_MINUS:
-            currentModel->rotationY -= 5.0f;
-            break;
-        }
+    // 배경 업데이트
+    background.update(frame_time);
 
-        // 이동 처리
-        currentModel->positionX += moveX;
-        currentModel->positionY += moveY;
-
-        // 각도가 360도를 넘어가면 0으로 리셋
-        currentModel->rotationX = fmod(currentModel->rotationX, 360.0f);
-        currentModel->rotationY = fmod(currentModel->rotationY, 360.0f);
-    }
+    // 플레이어 업데이트
+    player.update(frame_time);
+    objects[0] = static_cast<Model>(player);
 
     // 총알 업데이트
-    bulletPool.updateBullets();
+    bulletPool.update(frame_time);
+
 
     // 프레임 시간과 프레임 레이트 출력
     std::cout << "Frame Time: " << frame_time * 1000.0f << " ms, Frame Rate: " << frame_rate << " FPS\n";

@@ -35,6 +35,12 @@
     <ClInclude Include="bullet_pool.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="background.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vertex.glsl">
