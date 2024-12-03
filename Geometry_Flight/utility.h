@@ -23,10 +23,10 @@ char* fileToBuf(const char* file)
 	return buf; // Return the buffer
 }
 
-GLfloat clampGLfloat(GLfloat value, GLfloat minValue, GLfloat maxValue)
+float clamp_float(float min_value,float value, float max_value)
 {
-	if (value < minValue) return minValue;
-	else if (value > maxValue) return maxValue;
+	if (value < min_value) return min_value;
+	else if (value > max_value) return max_value;
 	else return value;
 }
 
