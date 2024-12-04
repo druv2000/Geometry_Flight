@@ -23,13 +23,20 @@ public:
         position_z = 10.0f;
         rotation_x = -90.0f;
         rotation_y = 0.0f;
+
+        /*colors.resize(vertex_count);
+        for (size_t i = 0; i < vertex_count - 1; i++)
+        {
+            colors[i] = glm::vec3(1.0f, 0.0f, 0.0f);
+        }
+        colors[vertex_count - 1] = glm::vec3(0.0f, 1.0f, 0.0f);*/
     }
     void update(float delta_time) 
     {
         if (left_pressed && !right_pressed)
-            move_x = -0.01f;
+            move_x = -0.02f;
         else if (right_pressed && !left_pressed)
-            move_x = 0.01f;
+            move_x = 0.02f;
         else
             move_x = 0.0f;        
 
