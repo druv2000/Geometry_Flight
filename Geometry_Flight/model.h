@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct {
     unsigned int v1, v2, v3;
+    unsigned int n1, n2, n3;
 } Face;
 
 typedef struct {
@@ -33,8 +34,10 @@ typedef struct {
     size_t vertex_count;
     Face* faces;
     size_t face_count;
-    std::vector<glm::vec3> colors;
+    std::vector<glm::vec3> normals;
+    size_t normal_count;
 
+    std::vector<glm::vec3> colors;
     float rotation_x;
     float rotation_y;
     float rotation_z;

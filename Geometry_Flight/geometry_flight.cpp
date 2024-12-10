@@ -98,6 +98,14 @@ void main(int argc, char** argv)
     read_obj_file("cylinder.obj", &cylinderModel);
     read_obj_file("cone.obj", &coneModel);
     read_obj_file("sphere.obj", &sphereModel);
+    /*
+    정점 법선 확인
+    for (size_t i = 0; i < cubeModel.normals.size(); i++)std::cerr << "cube 법선" << i << ": (" << cubeModel.normals[i].x << ", " << cubeModel.normals[i].y << ", " << cubeModel.normals[i].z << ")" << std::endl;
+    for (size_t i = 0; i < cylinderModel.normals.size(); i++)std::cerr << "cylinder법선" << i << ": (" << cylinderModel.normals[i].x << ", " << cylinderModel.normals[i].y << ", " << cylinderModel.normals[i].z << ")" << std::endl;
+    for (size_t i = 0; i < coneModel.normals.size(); i++)std::cerr << "cone 법선" << i << ": (" << coneModel.normals[i].x << ", " << coneModel.normals[i].y << ", " << coneModel.normals[i].z << ")" << std::endl;
+    for (size_t i = 0; i < sphereModel.normals.size(); i++)std::cerr << "sphere법선" << i << ": (" << sphereModel.normals[i].x << ", " << sphereModel.normals[i].y << ", " << sphereModel.normals[i].z << ")" << std::endl;
+    std::cerr << "cube " << cubeModel.normals.size() << ", cylinder " << cylinderModel.normals.size() << ", cone " << coneModel.normals.size() << ", sphere " << sphereModel.normals.size() << std::endl;
+    */
     initializeModelColors(cubeModel);
     initializeModelColors(cylinderModel);
     initializeModelColors(coneModel);
