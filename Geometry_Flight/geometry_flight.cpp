@@ -247,7 +247,7 @@ void updateShapeBuffer()
 {
     std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
-    std::vector<unsigned int> normals;
+    std::vector<glm::vec3> normals;
     std::vector<glm::vec3> colors;
 
     unsigned int vertexOffset = 0;
@@ -264,11 +264,9 @@ void updateShapeBuffer()
         indices.push_back(backgroundCylinder.faces[i].v1 - 1 + vertexOffset);
         indices.push_back(backgroundCylinder.faces[i].v2 - 1 + vertexOffset);
         indices.push_back(backgroundCylinder.faces[i].v3 - 1 + vertexOffset);
-
-        normals.push_back(backgroundCylinder.faces->n1 - 1 + vertexOffset);
-        normals.push_back(backgroundCylinder.faces->n2 - 1 + vertexOffset);
-        normals.push_back(backgroundCylinder.faces->n3 - 1 + vertexOffset);
-
+    }
+    for (size_t i = 0; i < backgroundCylinder.normal_count; i++) {
+        normals.push_back(backgroundCylinder.normals[i]);
     }
     vertexOffset += backgroundCylinder.vertex_count;
 
@@ -285,10 +283,9 @@ void updateShapeBuffer()
             indices.push_back(cube.faces[i].v1 - 1 + vertexOffset);
             indices.push_back(cube.faces[i].v2 - 1 + vertexOffset);
             indices.push_back(cube.faces[i].v3 - 1 + vertexOffset);
-
-            normals.push_back(cube.faces->n1 - 1 + vertexOffset);
-            normals.push_back(cube.faces->n2 - 1 + vertexOffset);
-            normals.push_back(cube.faces->n3 - 1 + vertexOffset);
+        }
+        for (size_t i = 0; i < cube.normal_count; i++) {
+            normals.push_back(cube.normals[i]);
         }
         vertexOffset += cube.vertex_count;
     }
@@ -299,6 +296,7 @@ void updateShapeBuffer()
     {
         vertices.push_back(glm::vec3(playerModel.vertices[i].x, playerModel.vertices[i].y, playerModel.vertices[i].z));
         colors.push_back(playerModel.colors[i]);
+        //normals.push_back(playerModel.normals[i + vertexOffset]);
     }
     for (size_t i = 0; i < playerModel.face_count; i++)
     {
@@ -306,9 +304,9 @@ void updateShapeBuffer()
         indices.push_back(playerModel.faces[i].v2 - 1 + vertexOffset);
         indices.push_back(playerModel.faces[i].v3 - 1 + vertexOffset);
 
-        normals.push_back(playerModel.faces->n1 - 1 + vertexOffset);
-        normals.push_back(playerModel.faces->n2 - 1 + vertexOffset);
-        normals.push_back(playerModel.faces->n3 - 1 + vertexOffset);
+    }
+    for (size_t i = 0; i < playerModel.normal_count; i++) {
+        normals.push_back(playerModel.normals[i]);
     }
     vertexOffset += playerModel.vertex_count;
 
@@ -320,16 +318,13 @@ void updateShapeBuffer()
             {
                 vertices.push_back(glm::vec3(bullet.vertices[i].x, bullet.vertices[i].y, bullet.vertices[i].z));
                 colors.push_back(bullet.colors[i]);
+                //normals.push_back(bullet.normals[i + vertexOffset]);
             }
             for (size_t i = 0; i < bullet.face_count; i++) 
             {
                 indices.push_back(bullet.faces[i].v1 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v2 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v3 - 1 + vertexOffset);
-
-                normals.push_back(bullet.faces->n1 - 1 + vertexOffset);
-                normals.push_back(bullet.faces->n2 - 1 + vertexOffset);
-                normals.push_back(bullet.faces->n3 - 1 + vertexOffset);
             }
             vertexOffset += bullet.vertex_count;
         }
@@ -339,20 +334,21 @@ void updateShapeBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(unsigned int), normals.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 }
 void initShapesBuffer()
 {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    glGenBuffers(2, vbo);
+    glGenBuffers(3, vbo);
     glGenBuffers(1, &ebo);
 
     updateShapeBuffer();
@@ -364,6 +360,10 @@ void initShapesBuffer()
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(2);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 }
@@ -464,6 +464,9 @@ GLvoid drawScene()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+
+    glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), 0.0f, 5.0f, 0.0f);
+    glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), 1.0f, 1.0f, 1.0f);
     draw_background();
     draw_objects();
     draw_bullets();
