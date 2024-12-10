@@ -20,7 +20,7 @@
 GLuint vertexShader;
 GLuint fragmentShader;
 GLuint shaderProgramID;
-GLuint vao, vbo[2];
+GLuint vao, vbo[3];
 GLuint ebo; // Element Buffer Object Ãß°¡
 
 Model cubeModel, cylinderModel;
@@ -247,6 +247,7 @@ void updateShapeBuffer()
 {
     std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
+    std::vector<unsigned int> normals;
     std::vector<glm::vec3> colors;
 
     unsigned int vertexOffset = 0;
@@ -263,6 +264,11 @@ void updateShapeBuffer()
         indices.push_back(backgroundCylinder.faces[i].v1 - 1 + vertexOffset);
         indices.push_back(backgroundCylinder.faces[i].v2 - 1 + vertexOffset);
         indices.push_back(backgroundCylinder.faces[i].v3 - 1 + vertexOffset);
+
+        normals.push_back(backgroundCylinder.faces->n1 - 1 + vertexOffset);
+        normals.push_back(backgroundCylinder.faces->n2 - 1 + vertexOffset);
+        normals.push_back(backgroundCylinder.faces->n3 - 1 + vertexOffset);
+
     }
     vertexOffset += backgroundCylinder.vertex_count;
 
@@ -279,6 +285,10 @@ void updateShapeBuffer()
             indices.push_back(cube.faces[i].v1 - 1 + vertexOffset);
             indices.push_back(cube.faces[i].v2 - 1 + vertexOffset);
             indices.push_back(cube.faces[i].v3 - 1 + vertexOffset);
+
+            normals.push_back(cube.faces->n1 - 1 + vertexOffset);
+            normals.push_back(cube.faces->n2 - 1 + vertexOffset);
+            normals.push_back(cube.faces->n3 - 1 + vertexOffset);
         }
         vertexOffset += cube.vertex_count;
     }
@@ -295,6 +305,10 @@ void updateShapeBuffer()
         indices.push_back(playerModel.faces[i].v1 - 1 + vertexOffset);
         indices.push_back(playerModel.faces[i].v2 - 1 + vertexOffset);
         indices.push_back(playerModel.faces[i].v3 - 1 + vertexOffset);
+
+        normals.push_back(playerModel.faces->n1 - 1 + vertexOffset);
+        normals.push_back(playerModel.faces->n2 - 1 + vertexOffset);
+        normals.push_back(playerModel.faces->n3 - 1 + vertexOffset);
     }
     vertexOffset += playerModel.vertex_count;
 
@@ -312,6 +326,10 @@ void updateShapeBuffer()
                 indices.push_back(bullet.faces[i].v1 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v2 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v3 - 1 + vertexOffset);
+
+                normals.push_back(bullet.faces->n1 - 1 + vertexOffset);
+                normals.push_back(bullet.faces->n2 - 1 + vertexOffset);
+                normals.push_back(bullet.faces->n3 - 1 + vertexOffset);
             }
             vertexOffset += bullet.vertex_count;
         }
@@ -326,6 +344,9 @@ void updateShapeBuffer()
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(unsigned int), normals.data(), GL_STATIC_DRAW);
 }
 void initShapesBuffer()
 {
