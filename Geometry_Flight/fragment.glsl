@@ -13,8 +13,9 @@ void main()
 {
 
 
-	float ambientLight = 1.0;
+	float ambientLight = 0.3;
 	vec3 ambient = ambientLight * lightColor;
+
 	vec3 normalVector = normalize(out_Normal);
 	vec3 lightDir = normalize (lightPos - out_Position);
 	float diffuseLight = max(dot(normalVector, lightDir), 0.0);
@@ -26,6 +27,10 @@ void main()
 	float specularLight = max (dot(viewDir, reflectDir), 0.0); //--- V와 R의 내적값으로 강도 조절: 음수 방지
 	specularLight = pow(specularLight, shininess); //--- shininess 승을 해주어 하이라이트를 만들어준다.
 	vec3 specular = specularLight * lightColor; 
+
+
 	vec3 result = (diffuse + ambient + specular) * out_Color;
+
+	result = normalVector;
 	Frag_Color = vec4(result, 1.0);
 }
