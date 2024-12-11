@@ -4,6 +4,7 @@
 #include "bullet.h"
 #include "bullet_pool.h"
 #include "player.h"
+#include "enemy.h"
 #include "background.h"
 
 #define CUBE 0
@@ -27,8 +28,9 @@ Model cubeModel, cylinderModel;
 Model coneModel, sphereModel;
 
 Player player;
+std::vector<Enemy> enemies;
 Background background;
-std::vector<Model> objects;
+std::vector<Object*> objects;
 std::vector<Bullet> bullets;
 
 
@@ -122,8 +124,8 @@ void main(int argc, char** argv)
     background.init(cylinderModel, cubeModel);
 
     // 초기 모델 설정 (player)
-    player.init(coneModel);
-    objects.push_back(static_cast<Model>(player));
+    player.init(coneModel, 0.0f, 0.0f, 10.0f);
+    objects.push_back(&player);
 
 
     initShapesBuffer();
@@ -164,10 +166,10 @@ void draw_objects()
     for (size_t i = 0; i < objects.size(); i++)
     {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(objects[i].position_x, objects[i].position_y, objects[i].position_z));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i].rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i].rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i].rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(objects[i]->position_x, objects[i]->position_y, objects[i]->position_z));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i]->rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i]->rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i]->rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
 
         if (i == 0) // 플레이어 캐릭터라면
         {
@@ -177,8 +179,8 @@ void draw_objects()
         GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        glDrawElements(GL_TRIANGLES, objects[i].face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
-        indexOffset += objects[i].face_count * 3;
+        glDrawElements(GL_TRIANGLES, objects[i]->face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
+        indexOffset += objects[i]->face_count * 3;
     }
 }
 void draw_bullets() 
@@ -190,10 +192,7 @@ void draw_bullets()
     unsigned int objectsOffset = backgroundOffset;
     for (const auto& model : objects) 
     {
-        if (&model != &background)
-        {
-            objectsOffset += model.face_count * 3;
-        }
+        objectsOffset += model->face_count * 3;
     }
 
     for (const auto& bullet : bulletPool.getAllBullets()) 
@@ -306,28 +305,31 @@ void updateShapeBuffer()
         vertexOffset += cube.vertex_count;
     }
 
-    // 플레이어 버퍼 업데이트
-    const Model& playerModel = static_cast<Model>(player);
-    for (size_t i = 0; i < playerModel.normal_count; i++) {
-        normalinf.push_back(playerModel.normals[i]);
-    }
-    for (size_t i = 0; i < playerModel.vertex_count; i++)
+   // objects 벡터의 모든 객체 업데이트 (플레이어, 적 등)
+    for (const auto& object : objects)
     {
-        vertices.push_back(glm::vec3(playerModel.vertices[i].x, playerModel.vertices[i].y, playerModel.vertices[i].z));
-        colors.push_back(playerModel.colors[i]);
+        for (size_t i = 0; i < object->normal_count; i++) {
+            normalinf.push_back(object->normals[i]);
+        }
+        for (size_t i = 0; i < object->vertex_count; i++)
+        {
+            const Vertex& vertex = object->vertices[i];
+            vertices.push_back(glm::vec3(vertex.x, vertex.y, vertex.z));
+            colors.push_back(object->colors[i]);
+        }
+        for (size_t i = 0; i < object->face_count; i++)
+        {
+            const Face& face = object->faces[i];
+            indices.push_back(face.v1 - 1 + vertexOffset);
+            indices.push_back(face.v2 - 1 + vertexOffset);
+            indices.push_back(face.v3 - 1 + vertexOffset);
+            normals.push_back(face.n1 - 1 + normalOffset);
+            normals.push_back(face.n2 - 1 + normalOffset);
+            normals.push_back(face.n3 - 1 + normalOffset);
+        }
+        normalOffset += object->normal_count;
+        vertexOffset += object->vertex_count;
     }
-    for (size_t i = 0; i < playerModel.face_count; i++)
-    {
-        indices.push_back(playerModel.faces[i].v1 - 1 + vertexOffset);
-        indices.push_back(playerModel.faces[i].v2 - 1 + vertexOffset);
-        indices.push_back(playerModel.faces[i].v3 - 1 + vertexOffset);
-        normals.push_back(playerModel.faces[i].n1 - 1 + normalOffset);
-        normals.push_back(playerModel.faces[i].n2 - 1 + normalOffset);
-        normals.push_back(playerModel.faces[i].n3 - 1 + normalOffset);
-
-    }
-    normalOffset += playerModel.normal_count;
-    vertexOffset += playerModel.vertex_count;
 
     // 총알 버퍼 업데이트
     for (const auto& bullet : bulletPool.getAllBullets()) 
@@ -526,6 +528,15 @@ GLvoid Reshape(int w, int h)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
+    case '1':
+    {
+        Enemy* new_enemy = new Enemy();
+        new_enemy->init(cylinderModel, 0.0f, 0.0f, -50.0f);
+        objects.push_back(new_enemy);
+
+        updateShapeBuffer();
+        break;
+    }
     case ' ':
     {
         // Bullet 객체 생성 및 추가
@@ -595,9 +606,15 @@ GLvoid Update()
     // 배경 업데이트
     background.update(frame_time);
 
-    // 플레이어 업데이트
-    player.update(frame_time);
-    objects[0] = static_cast<Model>(player);
+    // 오브젝트(플레이어, 적) 업데이트
+    int i = 0;
+    for (auto& object : objects)
+    {
+        object->update(frame_time);
+        objects[i] = object;
+        i++;
+        std::cout << objects.size() << std::endl;
+    }
 
     // 총알 업데이트
     bulletPool.update(frame_time);
@@ -606,6 +623,18 @@ GLvoid Update()
     // 프레임 시간과 프레임 레이트 출력
     std::cout << "Frame Time: " << frame_time * 1000.0f << " ms, Frame Rate: " << frame_rate << " FPS\n";
     last_update_time = current_time;
+
+    objects.erase(std::remove_if(objects.begin(), objects.end(),
+        [](Object* obj)
+        {
+            Enemy* enemy = dynamic_cast<Enemy*>(obj);
+            if (enemy && !enemy->is_active)
+            {
+                delete enemy;
+                return true;
+            }
+            return false;
+        }), objects.end());
 
     updateShapeBuffer();
     glutPostRedisplay();
