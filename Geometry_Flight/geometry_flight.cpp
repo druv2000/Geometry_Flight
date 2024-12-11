@@ -55,7 +55,7 @@ float frame_rate = 0.0f;
 BulletPool bulletPool(1000); // 100개의 총알을 가진 풀 생성
 
 
-// --------- func ---------
+// --------- func ----------
 
 void initializeModelColors(Model& model);
 void draw_objects();
