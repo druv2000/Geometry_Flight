@@ -8,7 +8,7 @@ in vec3 out_Position;
 
 uniform vec3 lightPos;
 uniform vec3 lightColor;
-
+uniform vec3 viewPos;
 void main()
 {
 
@@ -19,8 +19,13 @@ void main()
 	vec3 lightDir = normalize (lightPos - out_Position);
 	float diffuseLight = max(dot(normalVector, lightDir), 0.0);
 	vec3 diffuse = diffuseLight * lightColor;
-	vec3 result = (diffuse + ambient) * out_Color;
-
-
+	
+	int shininess = 128; //--- 광택 계수
+	vec3 viewDir = normalize(viewPos - out_Position);
+	vec3 reflectDir = reflect(-lightDir, normalVector); //--- 반사 방향: reflect 함수 - 입사 벡터의 반사 방향 계산
+	float specularLight = max (dot(viewDir, reflectDir), 0.0); //--- V와 R의 내적값으로 강도 조절: 음수 방지
+	specularLight = pow(specularLight, shininess); //--- shininess 승을 해주어 하이라이트를 만들어준다.
+	vec3 specular = specularLight * lightColor; 
+	vec3 result = (diffuse + ambient + specular) * out_Color;
 	Frag_Color = vec4(result, 1.0);
 }

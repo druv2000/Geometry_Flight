@@ -296,7 +296,6 @@ void updateShapeBuffer()
     {
         vertices.push_back(glm::vec3(playerModel.vertices[i].x, playerModel.vertices[i].y, playerModel.vertices[i].z));
         colors.push_back(playerModel.colors[i]);
-        //normals.push_back(playerModel.normals[i + vertexOffset]);
     }
     for (size_t i = 0; i < playerModel.face_count; i++)
     {
@@ -318,7 +317,6 @@ void updateShapeBuffer()
             {
                 vertices.push_back(glm::vec3(bullet.vertices[i].x, bullet.vertices[i].y, bullet.vertices[i].z));
                 colors.push_back(bullet.colors[i]);
-                //normals.push_back(bullet.normals[i + vertexOffset]);
             }
             for (size_t i = 0; i < bullet.face_count; i++) 
             {
@@ -329,7 +327,14 @@ void updateShapeBuffer()
             vertexOffset += bullet.vertex_count;
         }
     }
-
+    /*
+    색의 변화를 알기 쉽게 모두 단색으로
+    size_t temp = vertexOffset * 3;
+    colors.clear();
+    for (size_t i = 0; i < temp; i++)
+    {
+        colors.push_back(glm::vec3(1.0f,1.0f,1.0f));
+    }*/
     // 버퍼 데이터 업데이트
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
@@ -465,8 +470,10 @@ GLvoid drawScene()
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 
-    glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), 0.0f, 5.0f, 0.0f);
-    glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), 1.0f, 1.0f, 1.0f);
+    glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), 30.0f, 30.0f, 0.0f);//광원의 위치
+
+    glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), 0.8f, 0.8f, 0.8f);//빛의 색
+    glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), 0.0f, 10.0f, 20.0f);//카메라 위치
     draw_background();
     draw_objects();
     draw_bullets();
