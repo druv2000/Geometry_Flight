@@ -44,7 +44,7 @@ public:
         this->position_x += move_x;
         this->position_x = clamp_float(-5.0f, this->position_x, 5.0f); // 이동 범위 제한
     }
-    void handle_event(int event_type, const char key, int special_key, int x, int y) override
+    void handle_events(int event_type, const char key, int special_key, int x, int y) override
     {
         if (event_type == NORMAL_KEYBOARD_KEYDOWN)
         {
@@ -82,5 +82,18 @@ public:
         {
             
         }
+    }
+    BB get_bb() override
+    {
+        BB bb;
+        bb.top_left_front.x = position_x + 0.5f;
+        bb.top_left_front.y = position_y + 0.5f;
+        bb.top_left_front.z = position_z + 0.5f;
+
+        bb.bottom_right_back.x = position_x - 0.5f;
+        bb.bottom_right_back.y = position_y - 0.5f;
+        bb.bottom_right_back.z = position_z - 0.5f;
+        
+        return bb;
     }
 };

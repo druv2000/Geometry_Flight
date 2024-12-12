@@ -6,6 +6,7 @@
 #include "player.h"
 #include "enemy.h"
 #include "background.h"
+#include "obj_reader.h"
 
 #define CUBE 0
 #define CYLINDER 1
@@ -125,6 +126,7 @@ void main(int argc, char** argv)
 
     // 초기 모델 설정 (player)
     player.init(coneModel, 0.0f, 0.0f, 10.0f);
+    player.bb = player.get_bb();
     objects.push_back(&player);
 
 
@@ -246,6 +248,55 @@ void draw_background()
         glDrawElements(GL_TRIANGLES, cube.face_count * 3, GL_UNSIGNED_INT, (void*)(background.face_count * 3 * sizeof(unsigned int)));
     }
 }
+void draw_object_bb() {
+    glUseProgram(shaderProgramID);
+
+    // 라인 색상 설정 (예: 빨간색)
+    glUniform3f(glGetUniformLocation(shaderProgramID, "objectColor"), 1.0f, 0.0f, 0.0f);
+
+    for (const auto& object : objects) {
+        if (object->is_active) {
+            BB bb = object->get_bb();
+
+            // 바운딩 박스의 8개 꼭짓점 계산
+            glm::vec3 vertices[8] = {
+                glm::vec3(bb.top_left_front.x, bb.top_left_front.y, bb.top_left_front.z),
+                glm::vec3(bb.bottom_right_back.x, bb.top_left_front.y, bb.top_left_front.z),
+                glm::vec3(bb.bottom_right_back.x, bb.bottom_right_back.y, bb.top_left_front.z),
+                glm::vec3(bb.top_left_front.x, bb.bottom_right_back.y, bb.top_left_front.z),
+                glm::vec3(bb.top_left_front.x, bb.top_left_front.y, bb.bottom_right_back.z),
+                glm::vec3(bb.bottom_right_back.x, bb.top_left_front.y, bb.bottom_right_back.z),
+                glm::vec3(bb.bottom_right_back.x, bb.bottom_right_back.y, bb.bottom_right_back.z),
+                glm::vec3(bb.top_left_front.x, bb.bottom_right_back.y, bb.bottom_right_back.z)
+            };
+
+            // 모델 행렬 설정
+            glm::mat4 model = glm::mat4(1.0f);
+            GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+            // 바운딩 박스 그리기
+            glBegin(GL_LINES);
+            // 앞면
+            glVertex3fv(glm::value_ptr(vertices[0])); glVertex3fv(glm::value_ptr(vertices[1]));
+            glVertex3fv(glm::value_ptr(vertices[1])); glVertex3fv(glm::value_ptr(vertices[2]));
+            glVertex3fv(glm::value_ptr(vertices[2])); glVertex3fv(glm::value_ptr(vertices[3]));
+            glVertex3fv(glm::value_ptr(vertices[3])); glVertex3fv(glm::value_ptr(vertices[0]));
+            // 뒷면
+            glVertex3fv(glm::value_ptr(vertices[4])); glVertex3fv(glm::value_ptr(vertices[5]));
+            glVertex3fv(glm::value_ptr(vertices[5])); glVertex3fv(glm::value_ptr(vertices[6]));
+            glVertex3fv(glm::value_ptr(vertices[6])); glVertex3fv(glm::value_ptr(vertices[7]));
+            glVertex3fv(glm::value_ptr(vertices[7])); glVertex3fv(glm::value_ptr(vertices[4]));
+            // 연결선
+            glVertex3fv(glm::value_ptr(vertices[0])); glVertex3fv(glm::value_ptr(vertices[4]));
+            glVertex3fv(glm::value_ptr(vertices[1])); glVertex3fv(glm::value_ptr(vertices[5]));
+            glVertex3fv(glm::value_ptr(vertices[2])); glVertex3fv(glm::value_ptr(vertices[6]));
+            glVertex3fv(glm::value_ptr(vertices[3])); glVertex3fv(glm::value_ptr(vertices[7]));
+            glEnd();
+        }
+    }
+}
+
 void updateShapeBuffer() 
 {
     std::vector<glm::vec3> vertices;
@@ -519,6 +570,7 @@ GLvoid drawScene()
     draw_background();
     draw_objects();
     draw_bullets();
+    draw_object_bb();
     glutSwapBuffers();
 }
 GLvoid Reshape(int w, int h)
@@ -541,14 +593,8 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     {
         // Bullet 객체 생성 및 추가
         Model bulletModel = sphereModel;
-        Bullet* newBullet = bulletPool.getBullet(bulletModel, -0.1f);
-        if (newBullet != nullptr)
-        {
-            // 총알 초기 위치 설정 등 추가 로직
-            newBullet->position_x = player.position_x;
-            newBullet->position_y = player.position_y;
-            newBullet->position_z = player.position_z;
-        }
+        Bullet* newBullet = bulletPool.getBullet(bulletModel, player.position_x, player.position_y, player.position_z, -0.2f);
+        newBullet->bb = newBullet->get_bb();
 
         //Model bulletModel2 = sphereModel;
         //Bullet* newBullet2 = bulletPool.getBullet(bulletModel2, -0.1f);
@@ -583,12 +629,12 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 }
 GLvoid SpecialKeyboard(int key, int x, int y)
 {
-    player.handle_event(SPECIAL_KEYBOARD_KEYDOWN, '0', key, x, y);
+    player.handle_events(SPECIAL_KEYBOARD_KEYDOWN, '0', key, x, y);
     glutPostRedisplay();
 }
 GLvoid SpecialKeyboardUp(int key, int x, int y)
 {
-    player.handle_event(SPECIAL_KEYBOARD_KEYUP, '0', key, x, y);
+    player.handle_events(SPECIAL_KEYBOARD_KEYUP, '0', key, x, y);
     glutPostRedisplay();
 }
 GLvoid Timer(int value)

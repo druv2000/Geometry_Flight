@@ -16,7 +16,20 @@ public:
         position_z = z;
     }
     virtual void update(float delta_time) {}
-    virtual void handle_event(int event_type, const char key, int special_key, int x, int y) {}
+    virtual void handle_events(int event_type, const char key, int special_key, int x, int y) {}
+    virtual BB get_bb() 
+    {
+        BB bb;
+        bb.top_left_front.x = 0.0f;
+        bb.top_left_front.y = 0.0f;
+        bb.top_left_front.z = 0.0f;
+
+        bb.bottom_right_back.x = 0.0f;
+        bb.bottom_right_back.y = 0.0f;
+        bb.bottom_right_back.z = 0.0f;
+
+        return bb;
+    }
 
 protected:
     float clamp_float(float min, float value, float max)

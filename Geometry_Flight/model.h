@@ -30,6 +30,11 @@ typedef struct {
 } Face;
 
 typedef struct {
+    Vertex top_left_front;
+    Vertex bottom_right_back;
+}BB;
+
+typedef struct {
     Vertex* vertices;
     size_t vertex_count;
     Face* faces;
@@ -44,4 +49,6 @@ typedef struct {
     float position_x;
     float position_y;
     float position_z;
+    BB bb;
+
 } Model;

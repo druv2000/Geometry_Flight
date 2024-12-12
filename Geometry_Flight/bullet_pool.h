@@ -12,13 +12,13 @@ public:
         bullets.resize(size);
     }
 
-    Bullet* getBullet(const Model& model, float initialSpeed)
+    Bullet* getBullet(const Model& model, float x, float y, float z, float initial_speed)
     {
         for (auto& bullet : bullets)
         {
             if (!bullet.is_active)
             {
-                bullet.init(model, initialSpeed);
+                bullet.init(model, x, y, z, initial_speed);
                 return &bullet;
             }
         }
