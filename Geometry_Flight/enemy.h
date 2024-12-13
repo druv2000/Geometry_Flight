@@ -43,9 +43,16 @@ public:
     {
         if (group == "ally_bullet:enemy")
         {
+            // 플레이어 총알과 충돌했을 경우
             std::cout << "collision check" << std::endl;
             this->is_active = false;  // 현재 객체를 비활성화
             std::cout << "Enemy deactivated: " << this << std::endl;
+        }
+
+        else if (group == "player:enemy")
+        {
+            // 플레이어와 충돌했을 경우
+            // 뭐 없는데? 처리할게 있나
         }
     }
 };

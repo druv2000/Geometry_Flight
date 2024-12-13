@@ -134,6 +134,7 @@ void main(int argc, char** argv)
     player.init(coneModel, 0.0f, 0.0f, 10.0f);
     player.bb = player.get_bb();
     objects.push_back(&player);
+    add_collision_pair("player:enemy", &player, nullptr);
 
 
     initShapesBuffer();
@@ -574,10 +575,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     case '1':
     {
         Enemy* new_enemy = new Enemy();
-        float x_pos = rand() % 20 - 10;
+        float x_pos = rand() % 10 - 5; // 적을 x좌표 -5 ~ 5 범위에 생성
         new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
         objects.push_back(new_enemy);
         add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
+        add_collision_pair("player:enemy", nullptr, new_enemy);
 
         updateShapeBuffer();
         break;
@@ -587,6 +589,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         break;
     case ' ':
     {
+        if (!player.is_active)
+        {
+            return;
+        }
+
         // Bullet 객체 생성 및 추가
         Model bulletModel = sphereModel;
         Bullet* newBullet = bulletPool.getBullet(bulletModel, player.position_x, player.position_y, player.position_z, -0.05f);
@@ -627,11 +634,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
 }
 GLvoid SpecialKeyboard(int key, int x, int y)
 {
+    if (!player.is_active)
+    {
+        return;
+    }
+
     player.handle_events(SPECIAL_KEYBOARD_KEYDOWN, '0', key, x, y);
     glutPostRedisplay();
 }
 GLvoid SpecialKeyboardUp(int key, int x, int y)
 {
+    if (!player.is_active)
+    {
+        return;
+    }
+
     player.handle_events(SPECIAL_KEYBOARD_KEYUP, '0', key, x, y);
     glutPostRedisplay();
 }
@@ -737,14 +754,23 @@ GLvoid Update()
 }
 GLvoid enemy_wave_manager(int value)
 {
-    Enemy* new_enemy = new Enemy();
-    float x_pos = rand() % 10 - 5;
-    new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
-    objects.push_back(new_enemy);
-    add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
+    const int ENEMY_PER_WAVE = 5;
+    float x_pos;
+    float start_x = -5.0f; // 시작 x 좌표
+    float end_x = 5.0f;    // 끝 x 좌표
+    float interval = (end_x - start_x) / (ENEMY_PER_WAVE - 1); // 적들 사이의 간격
+
+    for (int i = 0; i < ENEMY_PER_WAVE; ++i)
+    {
+        x_pos = start_x + i * interval; // 각 적의 x 좌표 계산
+        Enemy* new_enemy = new Enemy();
+        new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
+        objects.push_back(new_enemy);
+        add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
+        add_collision_pair("player:enemy", nullptr, new_enemy);
+
+    }
 
     updateShapeBuffer();
-
-    // 다음 호출 예약
     glutTimerFunc(1000, enemy_wave_manager, 0);
 }

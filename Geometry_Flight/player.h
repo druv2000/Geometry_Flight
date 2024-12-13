@@ -92,4 +92,14 @@ public:
         
         return bb;
     }
+    void handle_collision(std::string group, Object* other) override
+    {
+        if (group == "player:enemy")
+        {
+            // 적과 충돌했을 경우
+            std::cout << "collision check" << std::endl;
+            this->is_active = false;  // 현재 객체를 비활성화
+            std::cout << "Enemy deactivated: " << this << std::endl;
+        }
+    }
 };
