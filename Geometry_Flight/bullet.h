@@ -7,6 +7,9 @@ class Bullet : public Object
 {
 public:
     Bullet() : Object() {}
+    int max_hp = 1;
+    int cur_hp = 1;
+    int attack_damage = 1;
 
     float x_speed = 0.0f;
     float y_speed = 0.0f;
@@ -33,6 +36,8 @@ public:
     }
     void update(float delta_time) override
     {
+        Object::update(delta_time);
+
         if (!is_active) return;
         position_x += x_speed * delta_time * 1000.0f; // 1000fps 기준으로 정규화
         position_y += y_speed * delta_time * 1000.0f;
@@ -65,9 +70,7 @@ public:
     {
         if (group == "ally_bullet:enemy")
         {
-            std::cout << "collision check" << std::endl;
             this->deactivate();
-            std::cout << "bullet deactivated: " << this << std::endl;
         }
     }
 };

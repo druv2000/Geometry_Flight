@@ -138,12 +138,14 @@
     <ClInclude Include="bullet.h" />
     <ClInclude Include="bullet_pool.h" />
     <ClInclude Include="collision_manager.h" />
+    <ClInclude Include="effect_hit.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="obj_reader.h" />
     <ClInclude Include="player.h" />
     <ClInclude Include="utility.h" />
+    <ClInclude Include="effect.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />

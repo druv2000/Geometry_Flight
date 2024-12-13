@@ -63,7 +63,7 @@ bool collide(const std::string& group, Object* a, Object* b)
     {
         remove_collision_object(a, &group);
         remove_collision_object(b, &group);
-        std::cout << "DEBUG: " << a->is_active << ", " << b->is_active << " -> so deleted" << std::endl;
+        //std::cout << "DEBUG: " << a->is_active << ", " << b->is_active << " -> so deleted" << std::endl;
         return false;
     }
 
@@ -100,7 +100,7 @@ void handle_collisions()
                 {
                     if (collide(group, a, b))
                     {
-                        std::cout << group << " collide" << std::endl;
+                        //std::cout << group << " collide" << std::endl;
                         a->handle_collision(group, b);
                         b->handle_collision(group, a);
                     }

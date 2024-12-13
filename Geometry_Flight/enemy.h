@@ -11,9 +11,15 @@ public:
     {
         Object::init(model, x, y, z);
         type = TYPE_ENEMY_1;
+        max_hp = 3;
+        cur_hp = 3;
+        attack_damage = 1;
+
     }
     void update(float delta_time) override
     {
+        Object::update(delta_time);
+
         this->position_z += 0.05f * delta_time * 1000;
         this->position_z = clamp_float(-50.0f, this->position_z, 50.0f); // 이동 범위 제한
 
@@ -44,9 +50,7 @@ public:
         if (group == "ally_bullet:enemy")
         {
             // 플레이어 총알과 충돌했을 경우
-            std::cout << "collision check" << std::endl;
-            this->is_active = false;  // 현재 객체를 비활성화
-            std::cout << "Enemy deactivated: " << this << std::endl;
+            this->take_damage(other->attack_damage);
         }
 
         else if (group == "player:enemy")

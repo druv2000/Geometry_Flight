@@ -9,6 +9,7 @@
 class Player : public Object {
 public:
     Player() : Object() {}
+
     float move_x = 0.0f;
     float move_y = 0.0f;
     bool left_pressed = false;
@@ -18,6 +19,10 @@ public:
     {
         Object::init(model, x, y, z);
         type = TYPE_PLAYER;
+        max_hp = 3;
+        cur_hp = 3;
+        attack_damage = 1;
+
         rotation_x = -90.0f;
         rotation_y = 0.0f;
 
@@ -30,6 +35,7 @@ public:
     }
     void update(float delta_time) override
     {
+        Object::update(delta_time);
         if (left_pressed && !right_pressed)
             move_x = -0.02f;
         else if (right_pressed && !left_pressed)
@@ -82,13 +88,13 @@ public:
     BB get_bb() override
     {
         BB bb;
-        bb.top_left_front.x = position_x + 0.5f;
-        bb.top_left_front.y = position_y + 0.5f;
-        bb.top_left_front.z = position_z + 0.5f;
+        bb.top_left_front.x = position_x + 0.4f;
+        bb.top_left_front.y = position_y + 0.4f;
+        bb.top_left_front.z = position_z + 0.4f;
 
-        bb.bottom_right_back.x = position_x - 0.5f;
-        bb.bottom_right_back.y = position_y - 0.5f;
-        bb.bottom_right_back.z = position_z - 0.5f;
+        bb.bottom_right_back.x = position_x - 0.4f;
+        bb.bottom_right_back.y = position_y - 0.4f;
+        bb.bottom_right_back.z = position_z - 0.4f;
         
         return bb;
     }
@@ -97,9 +103,7 @@ public:
         if (group == "player:enemy")
         {
             // 적과 충돌했을 경우
-            std::cout << "collision check" << std::endl;
-            this->is_active = false;  // 현재 객체를 비활성화
-            std::cout << "Enemy deactivated: " << this << std::endl;
+            this->take_damage(other->attack_damage);
         }
     }
 };
