@@ -17,11 +17,7 @@ public:
     void init(const Model& model, float x, float y, float z) override
     {
         Object::init(model, x, y, z);
-
-        /*position_x = 0.0f;
-        position_y = 0.0f;
-        position_z = 10.0f;*/
-
+        type = TYPE_PLAYER;
         rotation_x = -90.0f;
         rotation_y = 0.0f;
 

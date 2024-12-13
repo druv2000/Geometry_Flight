@@ -8,6 +8,7 @@ public:
     void init(const Model& model, float x, float y, float z) override
     {
         Object::init(model, x, y, z);
+        type = TYPE_ENEMY_1;
     }
     void update(float delta_time) override
     {
@@ -33,7 +34,14 @@ public:
         bb.bottom_right_back.x = position_x - 1.0f;
         bb.bottom_right_back.y = position_y - 1.0f;
         bb.bottom_right_back.z = position_z - 1.0f;
-        
+
         return bb;
+    }
+    void handle_collision(std::string group, Object* other) override
+    {
+        if (group == "ally_bullet:enemy")
+        {
+            this->is_active = false;
+        }
     }
 };

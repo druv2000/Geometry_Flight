@@ -7,6 +7,7 @@
 #include "enemy.h"
 #include "background.h"
 #include "obj_reader.h"
+#include "collision_manager.h"
 
 #define CUBE 0
 #define CYLINDER 1
@@ -25,15 +26,15 @@ GLuint shaderProgramID;
 GLuint vao, vbo[3];
 GLuint ebo; // Element Buffer Object 추가
 
+// 각종 모델
 Model cubeModel, cylinderModel;
 Model coneModel, sphereModel;
 
+// 각종 오브젝트들
 Player player;
 std::vector<Enemy> enemies;
 Background background;
 std::vector<Object*> objects;
-std::vector<Bullet> bullets;
-
 
 glm::mat4 model, view, projection;
 
@@ -168,59 +169,35 @@ void draw_objects()
 
     // 모델 그리기
     unsigned int indexOffset = backgroundOffset;
-    for (size_t i = 0; i < objects.size(); i++)
+    for (const auto& object: objects)
     {
         glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(objects[i]->position_x, objects[i]->position_y, objects[i]->position_z));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i]->rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i]->rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(objects[i]->rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(object->position_x, object->position_y, object->position_z));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-        if (i == 0) // 플레이어 캐릭터라면
+        if (object->type == TYPE_PLAYER) // 플레이어 캐릭터라면
         {
             modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
+            // 추가로 필요한 처리를 할 수 있음
+            // 회전 처리를 여기에 넣으면 좋을거같은데, 굳이 player.init()에서 처리하지 않아도 되고
+            // 그런데 이거 매 drawScene마다 실행되는건데, 여기서 처리하면 연산이 늘어나는건가?
+        }
+        else if (object->type == TYPE_BULLET_1) // 총알_1 이라면
+        {
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.2f, 0.2f, 0.2f));
+        }
+        else if (object->type == TYPE_ENEMY_1) // 적_1 이라면
+        {
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
         }
 
         GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        glDrawElements(GL_TRIANGLES, objects[i]->face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
-        indexOffset += objects[i]->face_count * 3;
-    }
-}
-void draw_bullets() 
-{
-    // 배경의 인덱스 오프셋 계산
-    unsigned int backgroundOffset = background.face_count * 3 + background.cube_models.size() * background.cube_models[0].face_count * 3;
-
-    // 다른 오브젝트들의 인덱스 오프셋 계산
-    unsigned int objectsOffset = backgroundOffset;
-    for (const auto& model : objects) 
-    {
-        objectsOffset += model->face_count * 3;
-    }
-
-    for (const auto& bullet : bulletPool.getAllBullets()) 
-    {
-        if (bullet.is_active)
-        {
-            glm::mat4 bulletModel = glm::mat4(1.0f);
-            bulletModel = glm::translate(bulletModel, glm::vec3(bullet.position_x, bullet.position_y, bullet.position_z));
-            bulletModel = glm::scale(bulletModel, glm::vec3(0.2f, 0.2f, 0.2f)); // 크기 조절
-
-            GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(bulletModel));
-
-            // 총알의 인덱스 오프셋 계산
-            GLuint indexOffset = objectsOffset;
-            for (const auto& b : bulletPool.getAllBullets()) 
-            {
-                if (&b == &bullet) break;
-                if (b.is_active) indexOffset += b.face_count * 3;
-            }
-
-            glDrawElements(GL_TRIANGLES, bullet.face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(GLuint)));
-        }
+        glDrawElements(GL_TRIANGLES, object->face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
+        indexOffset += object->face_count * 3;
     }
 }
 void draw_background()
@@ -549,7 +526,7 @@ GLvoid drawScene()
     else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_DEPTH_TEST);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(shaderProgramID);
@@ -572,7 +549,6 @@ GLvoid drawScene()
     glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), 0.0f, 10.0f, 20.0f);//카메라 위치
     draw_background();
     draw_objects();
-    draw_bullets();
     if (draw_bb_switch)
     {
         draw_object_bb();
@@ -595,6 +571,7 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         float x_pos = rand() % 20 - 10;
         new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
         objects.push_back(new_enemy);
+        add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
 
         updateShapeBuffer();
         break;
@@ -606,9 +583,11 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     {
         // Bullet 객체 생성 및 추가
         Model bulletModel = sphereModel;
-        Bullet* newBullet = bulletPool.getBullet(bulletModel, player.position_x, player.position_y, player.position_z, -0.2f);
+        Bullet* newBullet = bulletPool.getBullet(bulletModel, player.position_x, player.position_y, player.position_z, -0.05f);
         newBullet->bb = newBullet->get_bb();
-
+        add_collision_pair("ally_bullet:enemy", newBullet, nullptr);
+        
+        // 추가 총알 발사 시험
         //Model bulletModel2 = sphereModel;
         //Bullet* newBullet2 = bulletPool.getBullet(bulletModel2, -0.1f);
         //if (newBullet != nullptr)
@@ -666,7 +645,6 @@ GLvoid Update()
     if (slow_switch)
     {
         frame_time /= 10;
-        frame_rate /= 10;
     }
     
     // 배경 업데이트
@@ -679,16 +657,58 @@ GLvoid Update()
         object->update(frame_time);
         objects[i] = object;
         i++;
-        std::cout << objects.size() << std::endl;
+        //std::cout << objects.size() << std::endl;
     }
 
     // 총알 업데이트
     bulletPool.update(frame_time);
 
+    // objects 벡터 초기화 (기존 총알 제거)
+    objects.erase(
+        std::remove_if(objects.begin(), objects.end(),
+            [](Object* obj) 
+            { 
+                return dynamic_cast<Bullet*>(obj) != nullptr; 
+            }
+        ), objects.end());
+
+    // 활성화된 총알들을 objects 벡터에 추가
+    bulletPool.addActiveBulletsToObjects(objects);
+
 
     // 프레임 시간과 프레임 레이트 출력
     std::cout << "Frame Time: " << frame_time * 1000.0f << " ms, Frame Rate: " << frame_rate << " FPS\n";
     last_update_time = current_time;
+
+    //// 충돌 그룹 출력
+    //std::cout << "Total Groups: " << collision_pairs.size() << std::endl;
+    //for (const auto& pair : collision_pairs)
+    //{
+    //    const std::string& group = pair.first;
+    //    const auto& objects_a = pair.second.first;
+    //    const auto& objects_b = pair.second.second;
+
+    //    // 그룹 이름 출력
+    //    std::cout << "Group: " << group << std::endl;
+
+    //    // 첫 번째 벡터에 있는 오브젝트들 출력
+    //    std::cout << "  Objects in Group A:" << std::endl;
+    //    for (const auto* obj : objects_a) {
+    //        if (obj) {
+    //            std::cout << "    Object at: " << obj << ", Active: " << obj->is_active << std::endl;
+    //        }
+    //    }
+
+    //    // 두 번째 벡터에 있는 오브젝트들 출력
+    //    std::cout << "  Objects in Group B:" << std::endl;
+    //    for (const auto* obj : objects_b) 
+    //    {
+    //        if (obj) 
+    //        {
+    //            std::cout << "    Object at: " << obj << ", Active: " << obj->is_active << std::endl;
+    //        }
+    //    }
+    //}
 
     objects.erase(std::remove_if(objects.begin(), objects.end(),
         [](Object* obj)
@@ -697,6 +717,7 @@ GLvoid Update()
             if (enemy && !enemy->is_active)
             {
                 delete enemy;
+                remove_collision_object(enemy);
                 return true;
             }
             return false;

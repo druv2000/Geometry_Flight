@@ -16,6 +16,7 @@
 #include <thread>
 #include <cmath>
 #include <vector>
+#include <unordered_map>
 
 #include "utility.h"
 
@@ -41,6 +42,7 @@ typedef struct {
     size_t face_count;
     std::vector<glm::vec3> normals;
     size_t normal_count;
+    int type;
 
     std::vector<glm::vec3> colors;
     float rotation_x;

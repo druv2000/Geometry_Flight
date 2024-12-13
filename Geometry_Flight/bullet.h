@@ -12,13 +12,12 @@ public:
     float z_speed = 0.0f;
     bool is_active = false;
 
-
     void init(const Model& model, float x, float y, float z, float initial_speed)
     {
         Object::init(model, x, y, z);
-
-        z_speed = initial_speed;
         is_active = true;
+        type = TYPE_BULLET_1;
+        z_speed = initial_speed;
 
         colors.resize(vertex_count);
         for (size_t i = 0; i < vertex_count; i++) {
@@ -27,7 +26,7 @@ public:
 
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(-0.005f, 0.005f);
+        std::uniform_real_distribution<float> dis(-0.001f, 0.001f);
         x_speed = dis(gen);
         y_speed = 0.0f;
     }
@@ -45,13 +44,13 @@ public:
     BB get_bb() override
     {
         BB bb;
-        bb.top_left_front.x = position_x + 1.0f;
-        bb.top_left_front.y = position_y + 1.0f;
-        bb.top_left_front.z = position_z + 1.0f;
+        bb.top_left_front.x = position_x + 0.2f;
+        bb.top_left_front.y = position_y + 0.2f;
+        bb.top_left_front.z = position_z + 0.2f;
 
-        bb.bottom_right_back.x = position_x - 1.0f;
-        bb.bottom_right_back.y = position_y - 1.0f;
-        bb.bottom_right_back.z = position_z - 1.0f;
+        bb.bottom_right_back.x = position_x - 0.2f;
+        bb.bottom_right_back.y = position_y - 0.2f;
+        bb.bottom_right_back.z = position_z - 0.2f;
 
         return bb;
     }
@@ -59,5 +58,4 @@ public:
     {
         is_active = false;
     }
-    
 };

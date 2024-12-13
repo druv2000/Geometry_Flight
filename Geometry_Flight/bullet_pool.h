@@ -1,5 +1,6 @@
 #pragma once
 #include "bullet.h"
+#include "collision_manager.h"
 
 class BulletPool {
 private:
@@ -31,9 +32,10 @@ public:
             if (bullet.is_active)
             {
                 bullet.update(delta_time);
-                if (bullet.position_z <= -500.0f)
+                if (bullet.position_z <= -200.0f)
                 {
                     bullet.deactivate();
+                    remove_collision_object(&bullet);
                 }
             }
         }
@@ -41,5 +43,15 @@ public:
     std::vector<Bullet>& getAllBullets()
     {
         return bullets;
+    }
+    void addActiveBulletsToObjects(std::vector<Object*>& objects) 
+    {
+        for (auto& bullet : bullets)
+        {
+            if (bullet.is_active)
+            {
+                objects.push_back(&bullet);
+            }
+        }
     }
 };
