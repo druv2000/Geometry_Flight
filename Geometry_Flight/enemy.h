@@ -1,5 +1,7 @@
 #pragma once
 #include "object.h"
+#include "collision_manager.h"
+
 
 class Enemy : public Object {
 public:
@@ -41,7 +43,9 @@ public:
     {
         if (group == "ally_bullet:enemy")
         {
-            this->is_active = false;
+            std::cout << "collision check" << std::endl;
+            this->is_active = false;  // 현재 객체를 비활성화
+            std::cout << "Enemy deactivated: " << this << std::endl;
         }
     }
 };

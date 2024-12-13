@@ -35,7 +35,6 @@ public:
                 if (bullet.position_z <= -200.0f)
                 {
                     bullet.deactivate();
-                    remove_collision_object(&bullet);
                 }
             }
         }

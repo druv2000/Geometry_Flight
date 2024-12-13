@@ -70,18 +70,16 @@ bool collide(const std::string& group, Object* a, Object* b)
     // 3D 바운딩 박스를 가져옴
     BB bb_a = a->get_bb();
     BB bb_b = b->get_bb();
-    std::cout << "collide check5!" << std::endl;
 
     // 3D 충돌 검사
-    if (bb_a.top_left_front.x > bb_b.bottom_right_back.x) return false; // A의 왼쪽이 B의 오른쪽보다 오른쪽에 있음
-    if (bb_a.bottom_right_back.x < bb_b.top_left_front.x) return false; // A의 오른쪽이 B의 왼쪽보다 왼쪽에 있음
-    if (bb_a.top_left_front.y < bb_b.bottom_right_back.y) return false; // A의 위쪽이 B의 아래쪽보다 아래에 있음
-    if (bb_a.bottom_right_back.y > bb_b.top_left_front.y) return false; // A의 아래쪽이 B의 위쪽보다 위에 있음
-    if (bb_a.top_left_front.z < bb_b.bottom_right_back.z) return false; // A의 앞쪽이 B의 뒤쪽보다 뒤에 있음
-    if (bb_a.bottom_right_back.z > bb_b.top_left_front.z) return false; // A의 뒤쪽이 B의 앞쪽보다 앞에 있음
+    if (bb_a.top_left_front.x < bb_b.bottom_right_back.x) return false;
+    if (bb_a.bottom_right_back.x > bb_b.top_left_front.x) return false;
+    if (bb_a.top_left_front.y < bb_b.bottom_right_back.y) return false;
+    if (bb_a.bottom_right_back.y > bb_b.top_left_front.y) return false;
+    if (bb_a.top_left_front.z < bb_b.bottom_right_back.z) return false;
+    if (bb_a.bottom_right_back.z > bb_b.top_left_front.z) return false;
 
     // 충돌 발생
-    std::cout << "collide!" << std::endl;
     return true;
 }
 void handle_collisions()

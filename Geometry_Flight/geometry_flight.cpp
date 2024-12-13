@@ -78,6 +78,8 @@ GLvoid SpecialKeyboard(int key, int x, int y);
 GLvoid SpecialKeyboardUp(int key, int x, int y);
 GLvoid Timer(int value);
 GLvoid Update();
+GLvoid enemy_wave_manager(int value);
+
 
 // ==================== main =============================
 
@@ -149,6 +151,7 @@ void main(int argc, char** argv)
     glutKeyboardFunc(Keyboard);
     glutSpecialFunc(SpecialKeyboard);
     glutSpecialUpFunc(SpecialKeyboardUp);
+    glutTimerFunc(1000, enemy_wave_manager, 0);
     glutTimerFunc(0, Timer, 1);
     glutMainLoop();
 }
@@ -171,33 +174,36 @@ void draw_objects()
     unsigned int indexOffset = backgroundOffset;
     for (const auto& object: objects)
     {
-        glm::mat4 modelMatrix = glm::mat4(1.0f);
-        modelMatrix = glm::translate(modelMatrix, glm::vec3(object->position_x, object->position_y, object->position_z));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
+       if (object->is_active)
+       {
+           glm::mat4 modelMatrix = glm::mat4(1.0f);
+           modelMatrix = glm::translate(modelMatrix, glm::vec3(object->position_x, object->position_y, object->position_z));
+           modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
+           modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
+           modelMatrix = glm::rotate(modelMatrix, glm::radians(object->rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
 
-        if (object->type == TYPE_PLAYER) // 플레이어 캐릭터라면
-        {
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
-            // 추가로 필요한 처리를 할 수 있음
-            // 회전 처리를 여기에 넣으면 좋을거같은데, 굳이 player.init()에서 처리하지 않아도 되고
-            // 그런데 이거 매 drawScene마다 실행되는건데, 여기서 처리하면 연산이 늘어나는건가?
-        }
-        else if (object->type == TYPE_BULLET_1) // 총알_1 이라면
-        {
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(0.2f, 0.2f, 0.2f));
-        }
-        else if (object->type == TYPE_ENEMY_1) // 적_1 이라면
-        {
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
-        }
+           if (object->type == TYPE_PLAYER) // 플레이어 캐릭터라면
+           {
+               modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f, 0.5f, 0.5f));
+               // 추가로 필요한 처리를 할 수 있음
+               // 회전 처리를 여기에 넣으면 좋을거같은데, 굳이 player.init()에서 처리하지 않아도 되고
+               // 그런데 이거 매 drawScene마다 실행되는건데, 여기서 처리하면 연산이 늘어나는건가?
+           }
+           else if (object->type == TYPE_BULLET_1) // 총알_1 이라면
+           {
+               modelMatrix = glm::scale(modelMatrix, glm::vec3(0.2f, 0.2f, 0.2f));
+           }
+           else if (object->type == TYPE_ENEMY_1) // 적_1 이라면
+           {
+               modelMatrix = glm::scale(modelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
+           }
 
-        GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+           GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
+           glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        glDrawElements(GL_TRIANGLES, object->face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
-        indexOffset += object->face_count * 3;
+           glDrawElements(GL_TRIANGLES, object->face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
+           indexOffset += object->face_count * 3;
+       }
     }
 }
 void draw_background()
@@ -646,6 +652,9 @@ GLvoid Update()
     {
         frame_time /= 10;
     }
+
+    // 충돌 처리
+    handle_collisions();
     
     // 배경 업데이트
     background.update(frame_time);
@@ -677,7 +686,7 @@ GLvoid Update()
 
 
     // 프레임 시간과 프레임 레이트 출력
-    std::cout << "Frame Time: " << frame_time * 1000.0f << " ms, Frame Rate: " << frame_rate << " FPS\n";
+    //std::cout << "Frame Time: " << frame_time * 1000.0f << " ms, Frame Rate: " << frame_rate << " FPS\n";
     last_update_time = current_time;
 
     //// 충돌 그룹 출력
@@ -716,8 +725,8 @@ GLvoid Update()
             Enemy* enemy = dynamic_cast<Enemy*>(obj);
             if (enemy && !enemy->is_active)
             {
-                delete enemy;
                 remove_collision_object(enemy);
+                delete enemy;
                 return true;
             }
             return false;
@@ -725,4 +734,17 @@ GLvoid Update()
 
     updateShapeBuffer();
     glutPostRedisplay();
+}
+GLvoid enemy_wave_manager(int value)
+{
+    Enemy* new_enemy = new Enemy();
+    float x_pos = rand() % 10 - 5;
+    new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
+    objects.push_back(new_enemy);
+    add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
+
+    updateShapeBuffer();
+
+    // 다음 호출 예약
+    glutTimerFunc(1000, enemy_wave_manager, 0);
 }

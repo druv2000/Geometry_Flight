@@ -1,5 +1,6 @@
 #pragma once
 #include "object.h"
+#include "collision_manager.h"
 #include <random>
 
 class Bullet : public Object
@@ -56,6 +57,17 @@ public:
     }
     void deactivate()
     {
+        // 각종 초기화. 
         is_active = false;
+        remove_collision_object(this);
+    }
+    void handle_collision(std::string group, Object* other) override
+    {
+        if (group == "ally_bullet:enemy")
+        {
+            std::cout << "collision check" << std::endl;
+            this->deactivate();
+            std::cout << "bullet deactivated: " << this << std::endl;
+        }
     }
 };
