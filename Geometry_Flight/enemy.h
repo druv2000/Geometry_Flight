@@ -11,7 +11,7 @@ public:
     }
     void update(float delta_time) override
     {
-        this->position_z += 0.05f;
+        this->position_z += 0.05f * delta_time * 1000;
         this->position_z = clamp_float(-50.0f, this->position_z, 50.0f); // 이동 범위 제한
 
         if (this->position_z > 15.0f)

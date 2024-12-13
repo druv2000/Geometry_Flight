@@ -55,6 +55,9 @@ float frame_rate = 0.0f;
 
 BulletPool bulletPool(1000); // 100개의 총알을 가진 풀 생성
 
+bool draw_bb_switch = false;
+bool slow_switch = false;
+
 
 // --------- func ----------
 
@@ -570,7 +573,10 @@ GLvoid drawScene()
     draw_background();
     draw_objects();
     draw_bullets();
-    draw_object_bb();
+    if (draw_bb_switch)
+    {
+        draw_object_bb();
+    }
     glutSwapBuffers();
 }
 GLvoid Reshape(int w, int h)
@@ -580,15 +586,22 @@ GLvoid Reshape(int w, int h)
 GLvoid Keyboard(unsigned char key, int x, int y)
 {
     switch (key) {
+    case 'w':
+        draw_bb_switch = !draw_bb_switch;
+        break;
     case '1':
     {
         Enemy* new_enemy = new Enemy();
-        new_enemy->init(cylinderModel, 0.0f, 0.0f, -50.0f);
+        float x_pos = rand() % 20 - 10;
+        new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
         objects.push_back(new_enemy);
 
         updateShapeBuffer();
         break;
     }
+    case '2':
+        slow_switch = !slow_switch;
+        break;
     case ' ':
     {
         // Bullet 객체 생성 및 추가
@@ -648,6 +661,13 @@ GLvoid Update()
     std::chrono::duration<float> elapsed = current_time - last_update_time;
     frame_time = elapsed.count();
     frame_rate = 1.0f / frame_time;
+
+    // 슬로우모션 효과 시험용
+    if (slow_switch)
+    {
+        frame_time /= 10;
+        frame_rate /= 10;
+    }
     
     // 배경 업데이트
     background.update(frame_time);
