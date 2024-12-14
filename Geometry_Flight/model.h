@@ -38,6 +38,7 @@ typedef struct {
 typedef struct {
     Vertex* vertices;
     size_t vertex_count;
+    std::vector<glm::vec2> texcoord;
     Face* faces;
     size_t face_count;
     std::vector<glm::vec3> normals;

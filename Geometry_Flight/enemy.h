@@ -15,6 +15,10 @@ public:
         cur_hp = 3;
         attack_damage = 1;
 
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            texcoord.push_back(glm::vec2((vertices[i].x * vertices[i].z + 1) / 2.0f, (vertices[i].y * vertices[i].z + 1) / 2.0f));
+        }
     }
     void update(float delta_time) override
     {

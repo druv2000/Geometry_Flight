@@ -25,6 +25,10 @@ public:
         rotation_y = 0.0f;
         rotation_z = 90.0f;
 
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            texcoord.push_back(glm::vec2((vertices[i].x * vertices[i].z + 1) / 2.0f, (vertices[i].y * vertices[i].z + 1) / 2.0f));
+        }
         generate_random_cubes(100, cube); // 50개의 큐브 생성
     }
 
@@ -81,6 +85,11 @@ public:
             //cube.scale_y = scale;
             //cube.scale_z = scale;
 
+            //텍스쳐 좌표 추가
+            for (size_t i = 0; i < cube.vertex_count; i++)
+            {
+                cube.texcoord.push_back(glm::vec2((cube.vertices[i].x * cube.vertices[i].z + 1) / 2.0f, (cube.vertices[i].y * cube.vertices[i].z + 1) / 2.0f));
+            }
             cube_models.push_back(cube);
         }
     }

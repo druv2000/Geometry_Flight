@@ -135,6 +135,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="background.h" />
+    <ClInclude Include="backgroundtexture.h" />
     <ClInclude Include="bullet.h" />
     <ClInclude Include="bullet_pool.h" />
     <ClInclude Include="collision_manager.h" />
@@ -144,6 +145,7 @@
     <ClInclude Include="model.h" />
     <ClInclude Include="obj_reader.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="utility.h" />
     <ClInclude Include="effect.h" />
   </ItemGroup>

@@ -32,6 +32,10 @@ public:
             colors[i] = glm::vec3(1.0f, 0.0f, 0.0f);
         }
         colors[vertex_count - 1] = glm::vec3(0.0f, 1.0f, 0.0f);*/
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            texcoord.push_back(glm::vec2((vertices[i].x * vertices[i].z + 1) / 2.0f, (vertices[i].y * vertices[i].z + 1) / 2.0f));
+        }
     }
     void update(float delta_time) override
     {

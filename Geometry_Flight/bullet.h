@@ -33,6 +33,11 @@ public:
         std::uniform_real_distribution<float> dis(-0.001f, 0.001f);
         x_speed = dis(gen);
         y_speed = 0.0f;
+
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            texcoord.push_back(glm::vec2((vertices[i].x * vertices[i].z + 1) / 2.0f, (vertices[i].y * vertices[i].z + 1) / 2.0f));
+        }
     }
     void update(float delta_time) override
     {
