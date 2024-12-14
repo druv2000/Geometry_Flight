@@ -1,7 +1,8 @@
 #pragma once
 #include "effect.h"
-#include "object.h"
 #include <glm/glm.hpp>
+
+class Object;
 
 class HitEffect : public Effect {
 public:

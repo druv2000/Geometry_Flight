@@ -705,26 +705,10 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         add_collision_pair("ally_bullet:enemy", newBullet, nullptr);
         
         // 추가 총알 발사 시험
-        //Model bulletModel2 = sphereModel;
-        //Bullet* newBullet2 = bulletPool.getBullet(bulletModel2, -0.1f);
-        //if (newBullet != nullptr)
-        //{
-        //    // 총알 초기 위치 설정 등 추가 로직
-        //    newBullet2->position_x = player.position_x;
-        //    newBullet2->position_y = player.position_y;
-        //    newBullet2->position_z = player.position_z;
-        //}
-
-        //Model bulletModel3 = sphereModel;
-        //Bullet* newBullet3 = bulletPool.getBullet(bulletModel3, -0.1f);
-        //if (newBullet != nullptr)
-        //{
-        //    // 총알 초기 위치 설정 등 추가 로직
-        //    newBullet3->position_x = player.position_x;
-        //    newBullet3->position_y = player.position_y;
-        //    newBullet3->position_z = player.position_z;
-        //}
-
+        /*Model bulletModel2 = sphereModel;
+        Bullet* newBullet2 = bulletPool.getBullet(bulletModel, player.position_x, player.position_y, player.position_z, -0.05f);
+        newBullet2->bb = newBullet2->get_bb();
+        add_collision_pair("ally_bullet:enemy", newBullet2, nullptr);*/
         updateShapeBuffer();
     }
     break;
@@ -876,6 +860,7 @@ GLvoid enemy_wave_manager(int value)
 
     }
 
+    int wave_interval = 3000;
     updateShapeBuffer();
-    glutTimerFunc(1000, enemy_wave_manager, 0);
+    glutTimerFunc(wave_interval, enemy_wave_manager, 0);
 }
