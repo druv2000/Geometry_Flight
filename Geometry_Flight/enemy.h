@@ -14,6 +14,11 @@ public:
         max_hp = 5;
         cur_hp = 5;
         attack_damage = 1;
+        colors.resize(vertex_count);
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
+        }
 
         for (size_t i = 0; i < vertex_count; i++)
         {

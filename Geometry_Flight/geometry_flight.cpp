@@ -775,6 +775,11 @@ GLvoid Update()
         //std::cout << objects.size() << std::endl;
     }
 
+    if (!player.is_active)
+    {
+        slow_switch = true;
+    }
+
     // 총알 업데이트
     bulletPool.update(frame_time);
 

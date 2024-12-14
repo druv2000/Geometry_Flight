@@ -77,7 +77,7 @@ public:
         colors.resize(vertex_count);
         for (size_t i = 0; i < vertex_count; i++)
         {
-            if (this->hit_count % 2 == 0)
+            if (this->hit_count % 2 == 1)
                 colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
             else
                 colors[i] = glm::vec3(1.0f, 0.0f, 0.0f);
