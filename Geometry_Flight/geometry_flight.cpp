@@ -64,10 +64,8 @@ bool draw_bb_switch = false;
 bool slow_switch = false;
 
 
-unsigned int  backgroundTexture;//배경 그림
 // --------- func ----------
 
-void LoadTexture();
 void initializeModelColors(Model& model);
 void draw_objects();
 
@@ -119,7 +117,6 @@ void main(int argc, char** argv)
     //std::cerr << "sphere: " << sphereModel.vertex_count << "  " << sphereModel.face_count << "  " << sphereModel.normal_count << std::endl;
     
     glEnable(GL_DEPTH_TEST);
-    LoadTexture();
     initializeModelColors(cubeModel);
     initializeModelColors(cylinderModel);
     initializeModelColors(coneModel);
@@ -158,32 +155,6 @@ void main(int argc, char** argv)
     glutMainLoop();
 }
 
-void LoadTexture() {
-
-
-    int width, height, channel; // BMP의 높이
-
-    unsigned char* data = stbi_load("sky.bmp", &width, &height, &channel, 0); // BMP 로드
-    if (!data) {
-        printf("Failed to load texture\n");
-        return;
-    }
-
-    glGenTextures(1, &backgroundTexture);               // 텍스처 생성
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);   // 텍스처 바인딩
-
-    // 텍스처 데이터 정의
-    GLenum format = (channel == 4) ? GL_RGBA : GL_RGB;
-
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-    // 텍스처 매개변수 설정
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    free(data); // 메모리 해제
-}
 
 void initializeModelColors(Model& model)
 {
@@ -242,6 +213,7 @@ void draw_background()
 {
     unsigned int indexOffset = backgroundtexture.face_count * 3;
 
+    glBindTexture(GL_TEXTURE_2D, background.cylindertexture);
 
     glm::mat4 modelMatrix = glm::mat4(1.0f);
     modelMatrix = glm::translate(modelMatrix, glm::vec3(background.position_x, background.position_y, background.position_z));
@@ -257,6 +229,7 @@ void draw_background()
     indexOffset += background.face_count * 3;
 
     // 작은 정육면체들 그리기
+    glBindTexture(GL_TEXTURE_2D, background.cubetexture);
     for (const auto& cube : background.cube_models)
     {
         glm::mat4 cubeMatrix = modelMatrix;
@@ -270,6 +243,7 @@ void draw_background()
 
         glDrawElements(GL_TRIANGLES, cube.face_count * 3, GL_UNSIGNED_INT, (void*)(indexOffset * sizeof(unsigned int)));
     }
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 void draw_backgroundtexture()
 {
@@ -280,13 +254,13 @@ void draw_backgroundtexture()
     modelMatrix = glm::rotate(modelMatrix, glm::radians(backgroundtexture.rotation_x), glm::vec3(1.0f, 0.0f, 0.0f));
     modelMatrix = glm::rotate(modelMatrix, glm::radians(backgroundtexture.rotation_y), glm::vec3(0.0f, 1.0f, 0.0f));
     modelMatrix = glm::rotate(modelMatrix, glm::radians(backgroundtexture.rotation_z), glm::vec3(0.0f, 0.0f, 1.0f));
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(30.0f, 30.0f, 70.0f));
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(30.0f, 70.0f, 70.0f));
 
     // 배경 큐브 그리기
     GLuint modelLoc = glGetUniformLocation(shaderProgramID, "model");
     glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-    glBindTexture(GL_TEXTURE_2D, backgroundTexture);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindTexture(GL_TEXTURE_2D, backgroundtexture.Texture);
+    glDrawElements(GL_TRIANGLES, backgroundtexture.face_count * 3, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 void draw_object_bb() {

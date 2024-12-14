@@ -13,7 +13,7 @@ public:
     Background() : Model() {}
     float rotation_speed = 0.1f;
     std::vector<Model> cube_models;
-
+    unsigned int cubetexture, cylindertexture;
     void init(const Model& model, const Model& cube)
     {
         *static_cast<Model*>(this) = model;
@@ -29,6 +29,7 @@ public:
         {
             texcoord.push_back(glm::vec2((vertices[i].x * vertices[i].z + 1) / 2.0f, (vertices[i].y * vertices[i].z + 1) / 2.0f));
         }
+        LoadTexture();
         generate_random_cubes(100, cube); // 50개의 큐브 생성
     }
 
@@ -46,7 +47,7 @@ public:
     {
         cube_models.clear();
         for (int i = 0; i < count; ++i)
-        {   
+        {
             // 원통을 수직으로 눕혔으므로 height, radius 또한 누운 상태를 가정하고 적용해야 함
             float theta = glm::radians(glm::linearRand(0.0f, 360.0f));
             float height;                                   // 건물 배치가 가능한 너비 (-1 ~ 1: 원통의 양 끝 범위)
@@ -92,5 +93,52 @@ public:
             }
             cube_models.push_back(cube);
         }
+    }
+
+
+    void LoadTexture() {
+
+        int width, height, channel; // BMP의 높이
+
+        unsigned char* data = stbi_load("brick.bmp", &width, &height, &channel, 0); // BMP 로드
+        if (!data) {
+            printf("Failed to load brick texture\n");
+            return;
+        }
+
+        glGenTextures(1, &this->cubetexture);               // 텍스처 생성
+        glBindTexture(GL_TEXTURE_2D, cubetexture);   // 텍스처 바인딩
+
+        // 텍스처 데이터 정의
+        GLenum format = (channel == 4) ? GL_RGBA : GL_RGB;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        // 텍스처 매개변수 설정
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+        data = stbi_load("asphalt.bmp", &width, &height, &channel, 0); // BMP 로드
+        if (!data) {
+            printf("Failed to load asphalt texture\n");
+            return;
+        }
+
+        glGenTextures(1, &this->cylindertexture);               // 텍스처 생성
+        glBindTexture(GL_TEXTURE_2D, cylindertexture);   // 텍스처 바인딩
+
+        // 텍스처 데이터 정의
+        format = (channel == 4) ? GL_RGBA : GL_RGB;
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        // 텍스처 매개변수 설정
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        free(data); // 메모리 해제
     }
 };
