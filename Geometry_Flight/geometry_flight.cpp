@@ -650,21 +650,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     case 'w':
         draw_bb_switch = !draw_bb_switch;
         break;
-    case '1':
-    {
-        Enemy* new_enemy = new Enemy();
-        float x_pos = rand() % 10 - 5; // 적을 x좌표 -5 ~ 5 범위에 생성
-        new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
-        objects.push_back(new_enemy);
-        add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
-        add_collision_pair("player:enemy", nullptr, new_enemy);
+    //case '1':
+    //{
+    //    Enemy* new_enemy = new Enemy();
+    //    float x_pos = rand() % 10 - 5; // 적을 x좌표 -5 ~ 5 범위에 생성
+    //    new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
+    //    objects.push_back(new_enemy);
+    //    add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
+    //    add_collision_pair("player:enemy", nullptr, new_enemy);
 
-        updateShapeBuffer();
-        break;
-    }
-    case '2':
-        slow_switch = !slow_switch;
-        break;
+    //    updateShapeBuffer();
+    //    break;
+    //}
+    //case '2':
+    //    slow_switch = !slow_switch;
+    //    break;
     case ' ':
     {
         if (!player.is_active)
@@ -679,26 +679,10 @@ GLvoid Keyboard(unsigned char key, int x, int y)
         add_collision_pair("ally_bullet:enemy", newBullet, nullptr);
         
         // 추가 총알 발사 시험
-        //Model bulletModel2 = sphereModel;
-        //Bullet* newBullet2 = bulletPool.getBullet(bulletModel2, -0.1f);
-        //if (newBullet != nullptr)
-        //{
-        //    // 총알 초기 위치 설정 등 추가 로직
-        //    newBullet2->position_x = player.position_x;
-        //    newBullet2->position_y = player.position_y;
-        //    newBullet2->position_z = player.position_z;
-        //}
-
-        //Model bulletModel3 = sphereModel;
-        //Bullet* newBullet3 = bulletPool.getBullet(bulletModel3, -0.1f);
-        //if (newBullet != nullptr)
-        //{
-        //    // 총알 초기 위치 설정 등 추가 로직
-        //    newBullet3->position_x = player.position_x;
-        //    newBullet3->position_y = player.position_y;
-        //    newBullet3->position_z = player.position_z;
-        //}
-
+        /*Model bulletModel2 = sphereModel;
+        Bullet* newBullet2 = bulletPool.getBullet(bulletModel, player.position_x, player.position_y, player.position_z, -0.05f);
+        newBullet2->bb = newBullet2->get_bb();
+        add_collision_pair("ally_bullet:enemy", newBullet2, nullptr);*/
         updateShapeBuffer();
     }
     break;
@@ -763,6 +747,11 @@ GLvoid Update()
         objects[i] = object;
         i++;
         //std::cout << objects.size() << std::endl;
+    }
+
+    if (!player.is_active)
+    {
+        slow_switch = true;
     }
 
     // 총알 업데이트
@@ -850,6 +839,7 @@ GLvoid enemy_wave_manager(int value)
 
     }
 
+    int wave_interval = 3000;
     updateShapeBuffer();
-    glutTimerFunc(1000, enemy_wave_manager, 0);
+    glutTimerFunc(wave_interval, enemy_wave_manager, 0);
 }

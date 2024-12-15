@@ -11,9 +11,14 @@ public:
     {
         Object::init(model, x, y, z);
         type = TYPE_ENEMY_1;
-        max_hp = 3;
-        cur_hp = 3;
+        max_hp = 5;
+        cur_hp = 5;
         attack_damage = 1;
+        colors.resize(vertex_count);
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
+        }
 
         for (size_t i = 0; i < vertex_count; i++)
         {
@@ -24,7 +29,7 @@ public:
     {
         Object::update(delta_time);
 
-        this->position_z += 0.05f * delta_time * 1000;
+        this->position_z += 0.025f * delta_time * 1000;
         this->position_z = clamp_float(-50.0f, this->position_z, 50.0f); // 이동 범위 제한
 
         if (this->position_z > 15.0f)
@@ -49,6 +54,7 @@ public:
 
         return bb;
     }
+
     void handle_collision(std::string group, Object* other) override
     {
         if (group == "ally_bullet:enemy")
@@ -63,4 +69,5 @@ public:
             // 뭐 없는데? 처리할게 있나
         }
     }
+
 };

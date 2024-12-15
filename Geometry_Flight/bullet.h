@@ -25,7 +25,7 @@ public:
 
         colors.resize(vertex_count);
         for (size_t i = 0; i < vertex_count; i++) {
-            colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
+            colors[i] = glm::vec3(1.0f, 1.0f, 0.0f);
         }
 
         std::random_device rd;

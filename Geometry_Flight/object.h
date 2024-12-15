@@ -18,6 +18,7 @@ public:
     int max_hp = 1;
     int cur_hp = 1;
     int attack_damage = 1;
+    int hit_count = 0;
 
     virtual void init(const Model& model, float x, float y, float z) 
     {
@@ -68,12 +69,24 @@ public:
         // 데미지 처리 함수.
         this->cur_hp -= amount;
         clamp_int(0, this->cur_hp, this->max_hp);
+
+        // 피격 이펙트 (색 바꾸기)
+        colors.resize(vertex_count);
+        for (size_t i = 0; i < vertex_count; i++)
+        {
+            if (this->hit_count % 2 == 1)
+                colors[i] = glm::vec3(1.0f, 1.0f, 1.0f);
+            else
+                colors[i] = glm::vec3(1.0f, 0.0f, 0.0f);
+        }
         
         // hp가 0이 되면
         if (cur_hp <= 0)
         {
             this->is_active = false;  // 현재 객체를 비활성화. 충돌 그룹 해제는 그 구조때문에 update()에서 해야 함.
         }
+
+        this->hit_count++;
     }
     void addEffect(std::shared_ptr<Effect> effect)
     {
