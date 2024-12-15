@@ -31,7 +31,7 @@ public:
     }
     void update(float delta_time)
     {
-        rotation_x += rotation_speed * delta_time*1000;//업데이트
+        rotation_x += rotation_speed * delta_time*100;//업데이트
     }
 
     void handle_event(int event_type, const char key, int special_key, int x, int y)

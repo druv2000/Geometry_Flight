@@ -247,6 +247,8 @@ void draw_background()
 }
 void draw_backgroundtexture()
 {
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
     unsigned int indexOffset = background.face_count * 3 + background.cube_models.size() * background.cube_models[0].face_count * 3;
 
     glm::mat4 modelMatrix = glm::mat4(1.0f);
@@ -262,6 +264,8 @@ void draw_backgroundtexture()
     glBindTexture(GL_TEXTURE_2D, backgroundtexture.Texture);
     glDrawElements(GL_TRIANGLES, backgroundtexture.face_count * 3, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_CULL_FACE);
+
 }
 void draw_object_bb() {
     glUseProgram(shaderProgramID);
@@ -320,19 +324,14 @@ void updateShapeBuffer()
     std::vector<glm::vec2> Textures;
 
     std::vector<glm::vec3> normalinf;
-    std::vector<unsigned int> normals;
-    std::vector<glm::vec3> normalresult;
 
 
 
-    unsigned int vertexOffset = 0;
-    unsigned int normalOffset = 0;
+    unsigned int vertexOffset = 0, normalOffset = 0;
 
     //배경 큐브
     const Model& backgroundCube = static_cast<Model>(backgroundtexture);
-    for (size_t i = 0; i < backgroundCube.normal_count; i++) {
-        normalinf.push_back(backgroundCube.normals[i]);
-    }
+
     for (size_t i = 0; i < backgroundCube.vertex_count; i++)
     {
         vertices.push_back(glm::vec3(backgroundCube.vertices[i].x, backgroundCube.vertices[i].y, backgroundCube.vertices[i].z));
@@ -340,24 +339,19 @@ void updateShapeBuffer()
         Textures.push_back(backgroundCube.texcoord[i]);
 
     }
+
     for (size_t i = 0; i < backgroundCube.face_count; i++)
     {
         indices.push_back(backgroundCube.faces[i].v1 - 1 + vertexOffset);
         indices.push_back(backgroundCube.faces[i].v2 - 1 + vertexOffset);
         indices.push_back(backgroundCube.faces[i].v3 - 1 + vertexOffset);
-        normals.push_back(backgroundCube.faces[i].n1 - 1 + normalOffset);
-        normals.push_back(backgroundCube.faces[i].n2 - 1 + normalOffset);
-        normals.push_back(backgroundCube.faces[i].n3 - 1 + normalOffset);
-    }
 
-    normalOffset += backgroundCube.normal_count;
+    }
     vertexOffset += backgroundCube.vertex_count;
+    normalOffset += backgroundCube.face_count * 3;
     // 배경 실린더 버퍼 업데이트
     const Model& backgroundCylinder = static_cast<Model>(background);
 
-    for (size_t i = 0; i < backgroundCylinder.normal_count; i++) {
-        normalinf.push_back(backgroundCylinder.normals[i]);
-    }
     for (size_t i = 0; i < backgroundCylinder.vertex_count; i++) 
     {
         vertices.push_back(glm::vec3(backgroundCylinder.vertices[i].x, backgroundCylinder.vertices[i].y, backgroundCylinder.vertices[i].z));
@@ -369,20 +363,14 @@ void updateShapeBuffer()
         indices.push_back(backgroundCylinder.faces[i].v1 - 1 + vertexOffset);
         indices.push_back(backgroundCylinder.faces[i].v2 - 1 + vertexOffset);
         indices.push_back(backgroundCylinder.faces[i].v3 - 1 + vertexOffset);
-        normals.push_back(backgroundCylinder.faces[i].n1 - 1 + normalOffset);
-        normals.push_back(backgroundCylinder.faces[i].n2 - 1 + normalOffset);
-        normals.push_back(backgroundCylinder.faces[i].n3 - 1 + normalOffset);
     }
     
-    normalOffset += backgroundCylinder.normal_count;
     vertexOffset += backgroundCylinder.vertex_count;
+    normalOffset += backgroundCylinder.face_count * 3;
 
     // 작은 정육면체들 버퍼 업데이트
     for (const auto& cube : background.cube_models) 
     {
-        for (size_t i = 0; i < cube.normal_count; i++) {
-            normalinf.push_back(cube.normals[i]);
-        }
         for (size_t i = 0; i < cube.vertex_count; i++) 
         {
             vertices.push_back(glm::vec3(cube.vertices[i].x, cube.vertices[i].y, cube.vertices[i].z));
@@ -394,22 +382,17 @@ void updateShapeBuffer()
             indices.push_back(cube.faces[i].v1 - 1 + vertexOffset);
             indices.push_back(cube.faces[i].v2 - 1 + vertexOffset);
             indices.push_back(cube.faces[i].v3 - 1 + vertexOffset);
-            normals.push_back(cube.faces[i].n1 - 1 + normalOffset);
-            normals.push_back(cube.faces[i].n2 - 1 + normalOffset);
-            normals.push_back(cube.faces[i].n3 - 1 + normalOffset);
 
         }
-        normalOffset += cube.normal_count;
         vertexOffset += cube.vertex_count;
+        normalOffset += cube.face_count * 3;
     }
    
     
    // objects 벡터의 모든 객체 업데이트 (플레이어, 적 등)
     for (const auto& object : objects)
     {
-        for (size_t i = 0; i < object->normal_count; i++) {
-            normalinf.push_back(object->normals[i]);
-        }
+       
         for (size_t i = 0; i < object->vertex_count; i++)
         {
             const Vertex& vertex = object->vertices[i];
@@ -423,21 +406,16 @@ void updateShapeBuffer()
             indices.push_back(face.v1 - 1 + vertexOffset);
             indices.push_back(face.v2 - 1 + vertexOffset);
             indices.push_back(face.v3 - 1 + vertexOffset);
-            normals.push_back(face.n1 - 1 + normalOffset);
-            normals.push_back(face.n2 - 1 + normalOffset);
-            normals.push_back(face.n3 - 1 + normalOffset);
         }
-        normalOffset += object->normal_count;
         vertexOffset += object->vertex_count;
+        normalOffset += object->face_count * 3;
     }
 
     // 총알 버퍼 업데이트
     for (const auto& bullet : bulletPool.getAllBullets()) 
     {
         if (bullet.is_active) {
-            for (size_t i = 0; i < bullet.normal_count; i++) {
-                normalinf.push_back(bullet.normals[i]);
-            }
+            
             for (size_t i = 0; i < bullet.vertex_count; i++) 
             {
                 vertices.push_back(glm::vec3(bullet.vertices[i].x, bullet.vertices[i].y, bullet.vertices[i].z));
@@ -449,23 +427,43 @@ void updateShapeBuffer()
                 indices.push_back(bullet.faces[i].v1 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v2 - 1 + vertexOffset);
                 indices.push_back(bullet.faces[i].v3 - 1 + vertexOffset);
-                normals.push_back(bullet.faces[i].n1 - 1 + normalOffset);
-                normals.push_back(bullet.faces[i].n2 - 1 + normalOffset);
-                normals.push_back(bullet.faces[i].n3 - 1 + normalOffset);
             }
-            normalOffset += bullet.normal_count;
             vertexOffset += bullet.vertex_count;
+            normalOffset += bullet.face_count * 3;
         }
     }
-    //문제의 구간
-    //법선의 정보와 인데스를 맞춘다
-    for (size_t i = 0; i < normals.size(); i++)
-    {
-        normalresult.push_back(normalinf[normals[i]]);
-    }
     
+    ///삼각형 단위로 노멀 계산
+    std::vector<glm::vec3> normal(normalOffset, glm::vec3(0.0f));
 
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        // 삼각형을 구성하는 세 정점의 인덱스
+        unsigned int v1 = indices[i];
+        unsigned int v2 = indices[i + 1];
+        unsigned int v3 = indices[i + 2];
 
+        // 세 정점의 좌표
+        glm::vec3 p1 = vertices[v1];
+        glm::vec3 p2 = vertices[v2];
+        glm::vec3 p3 = vertices[v3];
+
+        // 삼각형의 두 변 계산
+        glm::vec3 edge1 = p2 - p1;
+        glm::vec3 edge2 = p3 - p1;
+
+        // 삼각형의 노말 벡터 계산 (외적)
+        glm::vec3 faceNormal = glm::normalize(glm::cross(edge1, edge2));
+
+        // 계산된 노말을 정점별로 더함
+        normal[v1] += faceNormal;
+        normal[v2] += faceNormal;
+        normal[v3] += faceNormal;
+    }
+    ///노말 정규화
+    for (size_t i = 0; i < normal.size(); i++) {
+        normal[i] = glm::normalize(normal[i]);
+    }
+    normalinf = normal;
 
 
     //색의 변화를 알기 쉽게 모두 단색으로
@@ -489,7 +487,7 @@ void updateShapeBuffer()
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-    glBufferData(GL_ARRAY_BUFFER, normalresult.size() * sizeof(glm::vec3), normalresult.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, normalinf.size() * sizeof(glm::vec3), normalinf.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
     glBufferData(GL_ARRAY_BUFFER, Textures.size() * sizeof(glm::vec2), Textures.data(), GL_STATIC_DRAW);
@@ -615,7 +613,7 @@ GLvoid drawScene()
     float fov = 45.0f;
 
     view = glm::lookAt(glm::vec3(0.0f, 10.0f, 20.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    projection = glm::perspective(glm::radians(fov), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(fov), SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 200.0f);
 
     GLuint viewLoc = glGetUniformLocation(shaderProgramID, "view");
     GLuint projLoc = glGetUniformLocation(shaderProgramID, "projection");
@@ -623,8 +621,15 @@ GLvoid drawScene()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+    glm::vec3 position = glm::vec3(0.0f, 10.0f, -49.0f);
+    float rotation_x = backgroundtexture.rotation_x;
 
-    glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), 0.0f, 10.0f, 10.0f);//광원의 위치
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), rotation_x, glm::vec3(1.0f, 0.0f, 0.0f));
+
+    glm::vec3 rotatedPosition = glm::vec3(rotationMatrix * glm::vec4(position, 1.0f));
+
+
+    glUniform3f(glGetUniformLocation(shaderProgramID, "lightPos"), rotatedPosition.x, rotatedPosition.y, rotatedPosition.z);//광원의 위치
     glUniform3f(glGetUniformLocation(shaderProgramID, "lightColor"), 0.8f, 0.8f, 0.8f);//빛의 색
     glUniform3f(glGetUniformLocation(shaderProgramID, "viewPos"), 0.0f, 10.0f, 20.0f);//카메라 위치
     
