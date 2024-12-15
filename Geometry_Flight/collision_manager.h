@@ -93,7 +93,7 @@ void handle_collisions()
         for (auto* a : objects_a)
         {
             if (!a->is_active) continue;
-
+                
             for (auto* b : objects_b)
             {
                 if (b->is_active && a != b)

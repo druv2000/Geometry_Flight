@@ -2,7 +2,6 @@
 #pragma once
 #include "model.h"
 #include "effect.h"
-//#include "effect_hit.h"
 #include <glm/glm.hpp>
 
 #define TYPE_DEFAULT 0
@@ -20,8 +19,6 @@ public:
     int cur_hp = 1;
     int attack_damage = 1;
     int hit_count = 0;
-
-    std::vector<glm::vec3> origin_colors = this->colors;
 
     virtual void init(const Model& model, float x, float y, float z) 
     {

@@ -676,21 +676,21 @@ GLvoid Keyboard(unsigned char key, int x, int y)
     case 'w':
         draw_bb_switch = !draw_bb_switch;
         break;
-    case '1':
-    {
-        Enemy* new_enemy = new Enemy();
-        float x_pos = rand() % 10 - 5; // 적을 x좌표 -5 ~ 5 범위에 생성
-        new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
-        objects.push_back(new_enemy);
-        add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
-        add_collision_pair("player:enemy", nullptr, new_enemy);
+    //case '1':
+    //{
+    //    Enemy* new_enemy = new Enemy();
+    //    float x_pos = rand() % 10 - 5; // 적을 x좌표 -5 ~ 5 범위에 생성
+    //    new_enemy->init(cylinderModel, x_pos, 0.0f, -50.0f);
+    //    objects.push_back(new_enemy);
+    //    add_collision_pair("ally_bullet:enemy", nullptr, new_enemy);
+    //    add_collision_pair("player:enemy", nullptr, new_enemy);
 
-        updateShapeBuffer();
-        break;
-    }
-    case '2':
-        slow_switch = !slow_switch;
-        break;
+    //    updateShapeBuffer();
+    //    break;
+    //}
+    //case '2':
+    //    slow_switch = !slow_switch;
+    //    break;
     case ' ':
     {
         if (!player.is_active)

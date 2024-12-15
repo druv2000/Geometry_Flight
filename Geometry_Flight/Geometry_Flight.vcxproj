@@ -139,7 +139,6 @@
     <ClInclude Include="bullet.h" />
     <ClInclude Include="bullet_pool.h" />
     <ClInclude Include="collision_manager.h" />
-    <ClInclude Include="effect_hit.h" />
     <ClInclude Include="object.h" />
     <ClInclude Include="enemy.h" />
     <ClInclude Include="model.h" />

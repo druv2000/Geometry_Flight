@@ -54,6 +54,7 @@ public:
 
         return bb;
     }
+
     void handle_collision(std::string group, Object* other) override
     {
         if (group == "ally_bullet:enemy")
@@ -68,4 +69,5 @@ public:
             // 뭐 없는데? 처리할게 있나
         }
     }
+
 };
